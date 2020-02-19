@@ -7,53 +7,65 @@
 #    --space_list 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 1.2 1.4 1.6 1.8 2 3 4 \
 #    --n_hashes 1 2 3 4 \
 #    --save cmin_ip_1329 --n_workers 30 \
-#    --data ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-132900.ports.npy
+#    --data ./data/equinix-chicago.dirA.20160121-132900.ports.npy
 
 ## lookup table + count min
 
-#python3 cutoff_count_min_param.py \
+# python3 cutoff_count_min_param.py \
 #    --space_list 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 1.2 1.4 1.6 1.8 2 3 4 \
 #    --n_hashes 1 2 3 4 --save cmin_ip_1329 --n_workers 40 \
-#    --test_data  ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-132900.ports.npy \
-#    --valid_data ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130700.ports.npy \
-#    --lookup     ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130000.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130100.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130200.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130300.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130400.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130500.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130600.ports.npy
+#    --test_data  ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
+#    --valid_data ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
+#    --lookup     ./data/equinix-chicago.dirA.20160121-130000.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130100.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130200.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130300.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130400.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130500.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130600.ports.npy
+
+# learned count min with hashing
+
+python3 learned_eval.py \
+   --space_list 1 \
+   --n_hashes 3 4 5 6 7 \
+   --save cmin_ip_1329_ru64 --n_workers 30 \
+   --test_data     ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
+   --valid_data    ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
+   --test_result   paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
+   --valid_result  paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz
+
 
 ## learned count min
 
-#python3 cutoff_count_min_param.py \
+# python3 cutoff_count_min_param.py \
 #    --space_list 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 1.2 1.4 1.6 1.8 2 3 4 \
 #    --n_hashes 1 2 3 4 \
 #    --save cmin_ip_1329_ru64 --n_workers 30 \
-#    --test_data     ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-132900.ports.npy \
-#    --valid_data    ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130700.ports.npy \
+#    --test_data     ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
+#    --valid_data    ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
 #    --test_result   paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
 #    --valid_result  paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz
 
 ## learned count min + perfect oracle
 
-#python3 cutoff_count_min_param.py \
+# python3 cutoff_count_min_param.py \
 #    --space_list 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 1.2 1.4 1.6 1.8 2 3 4 \
 #    --n_hashes 1 2 3 4 --save cmin_ip_1329_pcut --n_workers 30 \
-#    --test_data  ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-132900.ports.npy \
-#    --valid_data ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-132900.ports.npy \
+#    --test_data  ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
+#    --valid_data ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
 #    --perfect
 
 
 ## example command to get predictions from a trained model
 
-#python3 run_nn_cls.py \
-#	--train ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130000.ports.npy \
-#    --valid ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130700.ports.npy \
-#    --test  ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-135900.ports.npy \
+# python3 run_nn_cls.py \
+# 	--train ./data/equinix-chicago.dirA.20160121-130000.ports.npy \
+#    --valid ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
+#    --test  ./data/equinix-chicago.dirA.20160121-135900.ports.npy \
 #    --save  pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1359 \
-#    --rnn_hiddens 64 --port_hiddens 16 8 --hiddens 32 32 --batch_size 512 --n_epoch 2000 --lr 0.0001 --regress_min 65 \
-#    --resume paper_model/exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep100_20180506-230316_ep350.69 --evaluate
+#    --rnn_hiddens 64 --port_hiddens 16 8 --hiddens 32 32 --batch_size 512 --n_epoch 10 --lr 0.0001 --regress_min 65 \
+#    --resume model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1359_20191212-161307_ep0.69 --evaluate
 
 
 ## count sketch
@@ -62,22 +74,22 @@
 #    --space_list 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 1.2 1.4 1.6 1.8 2 3 4 \
 #    --n_hashes 1 2 3 4 \
 #    --save csketch_ip_1329 --n_workers 30 \
-#    --data ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-132900.ports.npy
+#    --data ./data/equinix-chicago.dirA.20160121-132900.ports.npy
 
 ## lookup table + Count Sketch
 
 #python3 cutoff_count_sketch_param.py \
 #    --space_list 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 1.2 1.4 1.6 1.8 2 3 4 \
 #    --n_hashes 1 2 3 4 --save csketch_ip_1329 --n_workers 40 \
-#    --test_data  ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-132900.ports.npy \
-#    --valid_data ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130700.ports.npy \
-#    --lookup     ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130000.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130100.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130200.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130300.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130400.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130500.ports.npy \
-#                 ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130600.ports.npy
+#    --test_data  ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
+#    --valid_data ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
+#    --lookup     ./data/equinix-chicago.dirA.20160121-130000.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130100.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130200.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130300.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130400.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130500.ports.npy \
+#                 ./data/equinix-chicago.dirA.20160121-130600.ports.npy
 
 ## learned count sketch
 
@@ -85,8 +97,8 @@
 #    --space_list 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 1.2 1.4 1.6 1.8 2 3 4 \
 #    --n_hashes 1 2 3 4 \
 #    --save csketch_ip_1329_ru64 --n_workers 30 \
-#    --test_data     ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-132900.ports.npy \
-#    --valid_data    ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-130700.ports.npy \
+#    --test_data     ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
+#    --valid_data    ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
 #    --test_result   paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
 #    --valid_result  paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz
 
@@ -95,8 +107,8 @@
 #python3 cutoff_count_sketch_param.py \
 #    --space_list 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 1.2 1.4 1.6 1.8 2 3 4 \
 #    --n_hashes 1 2 3 4 --save csketch_ip_1329_pcut --n_workers 30 \
-#    --test_data  ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-132900.ports.npy \
-#    --valid_data ./data/2016/20160121-130000.UTC/equinix-chicago.dirA.20160121-132900.ports.npy \
+#    --test_data  ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
+#    --valid_data ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
 #    --perfect
 #
 

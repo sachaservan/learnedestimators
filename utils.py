@@ -4,6 +4,14 @@ import subprocess
 import pickle
 from collections import deque
 
+#begin workaround for bug in latest numpy version
+# save np.load
+np_load_old = np.load
+
+# modify the default parameters of np.load
+np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+# end workaround
+
 def save_pickle(obj, name):
     with open(name, 'wb') as f:
         pickle.dump(obj, f, pickle.HIGHEST_PROTOCOL)

@@ -129,8 +129,13 @@ if __name__ == '__main__':
             key = 'valid_output'
         y_valid_ordered, valid_scores = order_y_wkey_list(y_valid, args.valid_results, key)
 
+    ###
+    # get the predicted counts here
+    # the keys are sorted by frequency to estimate error...
+    ###
     if args.test_results:
         key = 'test_output'
+        # either  y_test_ordered or test_scores is the predicted vs. ground truth counts
         y_test_ordered, test_scores = order_y_wkey_list(y_test, args.test_results, key)
 
     if args.perfect_order:
@@ -235,7 +240,7 @@ if __name__ == '__main__':
         # version 1
         #y_sorted = np.sort(y_test)[::-1]
         #results = pool.starmap(run_ccs_wscore,
-        #    zip(repeat(y_sorted), repeat(y_sorted), best_scuts, best_n_buckets - best_bcuts, best_n_hashes, repeat(name)))
+        #zip(repeat(y_sorted), repeat(y_sorted), best_scuts, best_n_buckets - best_bcuts, best_n_hashes, repeat(name)))
     elif args.lookup_data:
         results = pool.starmap(run_ccm_lookup,
             zip(repeat(x_test), repeat(y_test), best_n_hashes, best_n_buckets - best_bcuts, repeat(lookup_dict), best_scuts, repeat(name)))
