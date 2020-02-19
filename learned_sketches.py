@@ -146,68 +146,6 @@ def dynamic_count_min(y, y_scores, n_hashes, n_buckets, loss_function):
     return loss / len(y)
 
 
-# test code
-def test_oracle_count_sketch(y, y_scores, n_hash, n_buckets, loss_function):
-    if len(y) == 0:
-        return 0    # avoid division of 0
-    
-    score_total = np.sum(np.exp(y_scores))
-    y_total = np.sum(y)
-    pred_counts = np.floor(y_total * np.exp(y_scores) / score_total)
-
-    counts_all = np.zeros((n_hash, n_buckets))
-    y_buckets_all = np.zeros((n_hash, len(y)), dtype=int)
-    y_signs_all = np.zeros((n_hash, len(y)), dtype=int)
-    
-    diffs = np.subtract(y, pred_counts)
-    #diffs[diffs < 0] = 0
-
-    for i in range(n_hash):
-        counts, y_buckets, y_signs = random_hash_with_sign(diffs, n_buckets)
-        counts_all[i] = counts
-        y_buckets_all[i] = y_buckets
-        y_signs_all[i] = y_signs
-
-    loss = 0
-    for i in range(len(y)):
-        y_est = np.median(
-            [y_signs_all[k, i] * counts_all[k, y_buckets_all[k, i]] for k in range(n_hash)])
-        y_est += pred_counts[i]
-        y_est = np.abs(y_est)
-
-        loss += loss_function(y[i], y_est)
-    return loss / len(y)
-
-# test code
-def test_oracle_count_min_sketch(y, y_scores, n_hash, n_buckets, loss_function):
-    if len(y) == 0:
-        return 0    # avoid division of 0
-    
-    score_total = np.sum(np.exp(y_scores))
-    y_total = np.sum(y)
-    pred_counts = np.floor(y_total * np.exp(y_scores) / score_total)
-    
-    counts_all = np.zeros((n_hash, n_buckets))
-    y_buckets_all = np.zeros((n_hash, len(y)), dtype=int)
-
-    diffs = np.subtract(y, pred_counts)
-    # set all negative values to zero
-    diffs[diffs < 0] = 0 
-
-    for i in range(n_hash):
-        counts, loss, y_buckets = random_hash(diffs, n_buckets)
-        counts_all[i] = counts
-        y_buckets_all[i] = y_buckets
-
-    loss = 0
-    for i in range(len(y)):
-        y_est = np.min([counts_all[k, y_buckets_all[k, i]] for k in range(n_hash)])
-        y_est += pred_counts[i]
-        loss += loss_function(y[i], y_est)
-        
-    return loss / len(y)
-
-
 def equisplit(values, probs, n_chuncks):
     idxmap = {}
     splits = []
