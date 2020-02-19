@@ -7,7 +7,6 @@ import random
 import numpy as np
 
 def compute_avg_loss(counts, y, y_buckets):
-    assert np.sum(counts) == np.sum(y), 'counts do not have all the flows!'
     assert len(y) == len(y_buckets)
 
     if len(y) == 0:
@@ -48,6 +47,17 @@ def random_hash(y, n_buckets):
     loss = compute_avg_loss(counts, y, y_buckets)
     return counts, loss, y_buckets
 
+def random_hash_float32(y, n_buckets):
+    y = y.astype('float32')
+    counts = np.zeros(n_buckets)
+    y_buckets = np.random.choice(np.arange(n_buckets), size=len(y))
+
+    for i in range(len(y)):
+        counts[y_buckets[i]] += y[i]
+    loss = compute_avg_loss(counts, y, y_buckets)
+    return counts, loss, y_buckets
+
+
 def random_hash_with_scores(y, y_scores, n_buckets):
     counts = np.zeros(n_buckets)
     scores = np.zeros(n_buckets)
@@ -65,6 +75,20 @@ def random_hash_avg(y, n_buckets, n_avg):
         counts_all.append(counts)
         loss_all.append(loss)
     return counts_all, np.mean(loss_all)
+
+
+def random_hash_with_sign_float32(y, n_buckets):
+    '''
+    assign items in y into n_buckets, randomly pick a sign for each item
+    '''
+    y = y.astype('float32')
+    counts = np.zeros(n_buckets)
+    y_buckets = np.random.choice(np.arange(n_buckets), size=len(y))
+    y_signs = np.random.choice([-1, 1], size=len(y))
+    for i in range(len(y)):
+        counts[y_buckets[i]] += (y[i] * y_signs[i])
+    return counts, y_buckets, y_signs
+
 
 
 def random_hash_with_sign(y, n_buckets):
