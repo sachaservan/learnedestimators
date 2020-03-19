@@ -9,7 +9,7 @@ from multiprocessing import Pool
 from utils import get_data, get_stat, git_log, feat_to_string, get_data_str_with_ports_list
 from sketches import count_min, count_sketch
 from sketch_utils import order_y_wkey_list
-from learned_sketches import learned_count_sketch, learned_count_min_sketch
+from learned_sketches import learned_scaling_predictor, learned_constant_predictor, learned_hybrid
 from aol_utils import get_data_aol_query_list
 
 def loss_weighted(y_true, y_est):
@@ -26,30 +26,39 @@ def loss_l2(y_true, y_est):
 loss_function = loss_l2
 
 def run_count_min_sketch(y, n_hashes, n_buckets, name):
-    loss = count_min(y, n_buckets, n_hashes, loss_function)
+    _, loss = count_min(y, n_buckets, n_hashes, loss_function=loss_function)
     print('%s: # hashes %d, # buckets %d - loss %.2f\t time: %.2f sec' % \
         (name, n_hashes, n_buckets, loss, time.time() - start_t))
     return loss
 
 def run_count_sketch(y, n_hashes, n_buckets, name):
-    loss = count_sketch(y, n_buckets, n_hashes, loss_function)
+    _, loss = count_sketch(y, n_buckets, n_hashes, loss_function=loss_function)
     print('%s: # hashes %d, # buckets %d - loss %.2f\t time: %.2f sec' % \
         (name, n_hashes, n_buckets, loss, time.time() - start_t))
     return loss
 
-def run_learned_count_min_sketch(y, y_scores, n_hashes, n_buckets, name):
+def run_learned_constant_predictor(y, y_scores, n_hashes, n_buckets, name):
     start_t = time.time()
-    loss = learned_count_min_sketch(y, y_scores, n_hashes, n_buckets, loss_function)
+    loss = learned_constant_predictor(y, y_scores, n_hashes, n_buckets, loss_function)
     print('%s: # hashes %d, # buckets %d - loss %.2f\t time: %.2f sec' % \
         (name, n_hashes, n_buckets, loss, time.time() - start_t))
     return loss
 
-def run_learned_sketch(y, y_scores, n_hashes, n_buckets, name):
+def run_learned_scaling_predictor(y, y_scores, n_hashes, n_buckets, name):
     start_t = time.time()
-    loss = learned_count_sketch(y, y_scores, n_hashes, n_buckets, loss_function)
+    loss = learned_scaling_predictor(y, y_scores, n_hashes, n_buckets, loss_function)
     print('%s: # hashes %d, # buckets %d - loss %.2f\t time: %.2f sec' % \
         (name, n_hashes, n_buckets, loss, time.time() - start_t))
     return loss
+
+def run_learned_hybrid(y, y_scores, n_hashes, n_buckets, name):
+    start_t = time.time()
+    loss = learned_hybrid(y, y_scores, n_hashes, n_buckets, loss_function)
+    print('%s: # hashes %d, # buckets %d - loss %.2f\t time: %.2f sec' % \
+        (name, n_hashes, n_buckets, loss, time.time() - start_t))
+    return loss
+
+
 
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(sys.argv[0])
@@ -102,37 +111,39 @@ if __name__ == '__main__':
     # testing parameters 
     n_hashes = []
     n_buckets = []
+    n_buckets_learned = []
     for space in args.space_list:
         for n_hash in args.n_hashes_list:
             space_to_buckets = int(space * 1e6 / (n_hash * 4))
+            space_to_buckets_learned = int(space * 1e6 / (n_hash * 4))
             n_hashes.append(n_hash)
             n_buckets.append(space_to_buckets)
+            n_buckets_learned.append(space_to_buckets_learned)
+
 
     #################################################################
     # evaluate vanilla sketching algorithm against learned sketches
     #################################################################
 
-    # learned count min sketch
+    # learned estimator with scaling predictor
     pool = Pool(args.n_workers)
     test_results_learned = pool.starmap(
-        run_learned_count_min_sketch, zip(repeat(y_valid_ordered), repeat(y_valid_scores), 
-        n_hashes, n_buckets, repeat('learned_count_min_sketch')))
+        run_learned_hybrid, zip(repeat(y_valid_ordered), repeat(y_valid_scores), 
+        n_hashes, n_buckets_learned, repeat('hybrid_predictor')))
     pool.close()
     pool.join()
 
     # vanilla count min sketch
     pool = Pool(args.n_workers)
     test_results = pool.starmap(
-        run_count_min_sketch, zip(repeat(y_valid_ordered), 
-        n_hashes, n_buckets, repeat('count_min_sketch')))
+        run_count_sketch, zip(repeat(y_valid_ordered), 
+        n_hashes, n_buckets, repeat('count_sketch')))
     pool.close()
 
-    log_str += "Percentage improvement (loss_regular / loss_learned): \n"
+    print("Percentage improvement (loss_regular / loss_learned):")
     for i in range(len(test_results)):
         percentage = test_results[i] / test_results_learned[i]
-        log_str += (" " + str(np.floor((percentage - 1.0) * 100))) + "\n"
-
-    print(log_str)
+        print(" " + str(percentage))
 
     with open(os.path.join(folder, args.save+'.log'), 'w') as f:
         f.write(log_str)
@@ -146,11 +157,13 @@ if __name__ == '__main__':
         space_list=args.space_list,
     )
     
-    # learned count sketch
+    exit(0)
+    
+    # learned constatnt predictor
     pool = Pool(args.n_workers)
     test_results_learned = pool.starmap(
-        run_learned_sketch, zip(repeat(y_valid_ordered), repeat(y_valid_scores), 
-        n_hashes, n_buckets, repeat('learned_count_sketch')))
+        run_learned_constant_predictor, zip(repeat(y_valid_ordered), repeat(y_valid_scores), 
+        n_hashes, n_buckets_learned, repeat('constant_predictor')))
     pool.close()
 
     # vanilla count sketch
@@ -160,12 +173,10 @@ if __name__ == '__main__':
         n_hashes, n_buckets, repeat('count_sketch')))
     pool.close()
 
-    log_str += "Percentage improvement (loss_regular / loss_learned): \n"
+    print("Percentage improvement (loss_regular / loss_learned):")
     for i in range(len(test_results)):
         percentage = test_results[i] / test_results_learned[i]
-        log_str += (" " + str(np.floor((percentage - 1.0) * 100))) + "\n"
-
-    print(log_str)
+        print(" " + str(percentage))
 
     np.savez(os.path.join(folder, args.save+'learned_sketch_results'),
         command=command,
