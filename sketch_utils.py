@@ -44,8 +44,19 @@ def random_hash(y, n_buckets):
     y_buckets = np.random.choice(np.arange(n_buckets), size=len(y))
     for i in range(len(y)):
         counts[y_buckets[i]] += y[i]
+    # TODO(sss): remove the loss calculation here; useless
     loss = compute_avg_loss(counts, y, y_buckets)
     return counts, loss, y_buckets
+
+def random_hash_with_bucket_weights(y, weights, n_buckets):
+    counts = np.zeros(n_buckets)
+    sum_weights = np.zeros(n_buckets)
+    y_buckets = np.random.choice(np.arange(n_buckets), size=len(y))
+    for i in range(len(y)):
+        counts[y_buckets[i]] += y[i]
+        sum_weights[y_buckets[i]] += weights[i]
+    return counts, sum_weights, y_buckets
+
 
 def random_hash_with_scores(y, y_scores, n_buckets):
     counts = np.zeros(n_buckets)

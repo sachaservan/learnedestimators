@@ -4,7 +4,7 @@ import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 
-plt.style.use('seaborn-whitegrid')
+plt.style.use('seaborn')
 
 
 def get_best_loss_space(data):
@@ -16,63 +16,29 @@ def get_best_loss_space(data):
 
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(sys.argv[0])
-    argparser.add_argument("--count_min", type=str, default='')
-    argparser.add_argument("--learned_cmin", type=str, nargs='*', default=[])
-    argparser.add_argument("--model_names", type=str, nargs='*', default=["Learned Count Min"])
-    argparser.add_argument("--perfect_ccm", type=str, default='')
-    argparser.add_argument("--lookup_table_ccm", type=str, default='')
-    argparser.add_argument("--model_sizes", type=float, nargs='*', default=[])
-    argparser.add_argument("--lookup_size", type=float, default=0.0)
+    argparser.add_argument("--data", type=str, default='')
     argparser.add_argument("--x_lim", type=float, nargs='*', default=[])
     argparser.add_argument("--y_lim", type=float, nargs='*', default=[])
     argparser.add_argument("--title", type=str, default='')
     argparser.add_argument("--algo", type=str, default='Alg')
     argparser.add_argument("--N", type=float, default=1, help='normalization factor (# item / total counts)')
     args = argparser.parse_args()
-
-    if args.learned_cmin:
-        if not args.model_sizes:
-            args.model_sizes = np.zeros(len(args.learned_cmin))
-        assert len(args.learned_cmin) == len(args.model_names), "provide names for the learned_cmin results"
-        assert len(args.learned_cmin) == len(args.model_sizes), "provide model sizes for the learned_cmin results"
-
+    
     N = args.N
     ax = plt.figure().gca()
 
-    if args.count_min:
-        data = np.load(args.count_min)
-        space_cmin = data['space_list']
-        loss_cmin = np.amin(data['loss_all'], axis=0)
-        ax.plot(space_cmin, loss_cmin*N, label=args.algo)
+    if args.data:
+        data = np.load(args.data)
+        space = data['space_list']
+        loss_sketch = data['loss_vanilla']
+        loss_learned = data['loss_learned_no_cutoff']
+       # loss_learned_cutoff = data['loss_learned_cutoff']
 
-    if args.lookup_table_ccm:
-        data = np.load(args.lookup_table_ccm)
-        if len(data['loss_all'].shape) == 1:
-            print('plot testing results for lookup table')
-            ax.plot(data['spaec_actual'] / 1e6 + args.lookup_size, data['loss_all']*N, linestyle='-.', label='Table lookup ' + args.algo)
-        else:
-            loss_lookup, space_actual = get_best_loss_space(data)
-            ax.plot(space_actual, loss_lookup*N + args.lookup_size, linestyle='-.', label='Table lookup ' + args.algo)
+        ax.plot(space, loss_sketch*N, label="count sketch")
+        ax.plot(space, loss_learned*N, label=args.algo)
+        # ax.plot(space, loss_learned_cutoff*N, label=args.algo + " + cutoff")
 
-    if args.perfect_ccm:
-        data = np.load(args.perfect_ccm)
-        if len(data['loss_all'].shape) == 1:
-            print('plot testing results for perfect CCM')
-            ax.plot(data['spaec_actual'] / 1e6, data['loss_all']*N, linestyle='-.', label='Learned ' + args.algo + ' (Ideal)')
-        else:
-            loss_cutoff_pf, space_actual = get_best_loss_space(data)
-            ax.plot(space_cmin, loss_cutoff_pf*N, linestyle='--', label='Learned ' + args.algo + ' (Ideal)')
-
-    if args.learned_cmin:
-        for i, cmin_result in enumerate(args.learned_cmin):
-            data = np.load(cmin_result)
-            if len(data['loss_all'].shape) == 1:
-                print('plot testing results for cutoff cmin')
-                ax.plot(data['spaec_actual'] / 1e6 + args.model_sizes[i], data['loss_all']*N, label=args.model_names[i])
-            else:
-                loss_cutoff, space_actual = get_best_loss_space(data)
-                ax.plot(space_actual + args.model_sizes[i], loss_cutoff*N, label=args.model_names[i])
-
+    ax.set_yscale('log')
     ax.set_ylabel('loss')
     ax.set_xlabel('space (MB)')
     if args.y_lim:
@@ -80,7 +46,7 @@ if __name__ == '__main__':
     if args.x_lim:
         ax.set_xlim(args.x_lim)
 
-    title = 'loss vs space - %s' % args.title
+    title = 'loss vs space (log scale)'
     ax.set_title(title)
     plt.legend(loc="upper right")
     plt.show()
