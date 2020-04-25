@@ -10,13 +10,17 @@
 
 # learned count sketch
 python3 learned_eval.py \
-   --space_list 0.2 0.4 0.6 0.8 1 1.2 1.4 1.6 2 4 \
-   --n_hashes 5 \
-   --save cmin_ip_1329_ru64 --n_workers 1 \
-   --test_data    ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
-   --valid_data   ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
-   --test_result   paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
-   --valid_result  paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz
+   --space_list 4 \
+   --n_hashes_list 5 \
+   --save_file learned_sketch_experiment_results \
+   --save_folder experiments \
+   --n_workers 1 \
+   --dataset ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
+   --model  paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
+   --run_regular_count_sketch \
+   --run_learned_version \
+   # --run_cutoff_version \
+   # --run_perfect_oracle_version \
 
 # count min
 # python3 learned_eval.py \
