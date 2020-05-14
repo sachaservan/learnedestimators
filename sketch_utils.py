@@ -58,15 +58,6 @@ def random_hash_with_bucket_weights(y, weights, n_buckets):
     return counts, sum_weights, y_buckets
 
 
-def random_hash_with_scores(y, y_scores, n_buckets):
-    counts = np.zeros(n_buckets)
-    scores = np.zeros(n_buckets)
-    y_buckets = np.random.choice(np.arange(n_buckets), size=len(y))
-    for i in range(len(y)):
-        counts[y_buckets[i]] += y[i]
-        scores[y_buckets[i]] += y_scores[i]
-    return counts, scores, y_buckets
-
 def random_hash_avg(y, n_buckets, n_avg):
     counts_all = []
     loss_all = []
@@ -86,6 +77,24 @@ def random_hash_with_sign(y, n_buckets):
     for i in range(len(y)):
         counts[y_buckets[i]] += (y[i] * y_signs[i])
     return counts, y_buckets, y_signs
+
+def random_hash_with_sign_and_weights(y, n_buckets, countmin=False):
+    '''
+    assign items in y into n_buckets, randomly pick a sign for each item
+    '''
+    counts = np.zeros(n_buckets)
+    sum_weights = np.zeros(n_buckets)
+    y_buckets = np.random.choice(np.arange(n_buckets), size=len(y))
+    if countmin:
+        y_signs = np.ones(len(y))
+    else:
+        y_signs = np.random.choice([-1, 1], size=len(y))
+    for i in range(len(y)):
+        counts[y_buckets[i]] += (y[i] * y_signs[i])
+        sum_weights[y_buckets[i]] += y_signs[i]
+    return counts, sum_weights, y_buckets, y_signs
+
+
 
 def cutoff_countsketch(y, n_buckets, b_cutoff, n_hashes):
     assert b_cutoff <= n_buckets, 'bucket cutoff cannot be greater than n_buckets'
