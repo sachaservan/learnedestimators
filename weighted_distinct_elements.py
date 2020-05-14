@@ -84,4 +84,17 @@ def hyperloglogsimulate(n, m):
         s = (1 << registers[i])
         z += 1.0/s
 
-    return a * (m**2) / z 
+    E = a * (m**2) / z 
+
+    if E <= (5/2) * m: 
+        v = 0
+        for i in range(m):
+            if registers[i] == 0:
+                v += 1
+        if v != 0:
+            E = m * math.log(m/v, 2) # small range correction 
+
+        # TODO: implement large range correction 
+
+    return E 
+
