@@ -69,8 +69,9 @@ def load_dataset(dataset, model, is_aol=False, is_synth=False):
     oracle_scores_sorted = oracle_scores[sort]
     data_sorted = data[sort]
 
-    print("data:   " + str(data_sorted))
-    print("scores: " + str(oracle_scores_sorted))
+    print("# items: " + str(len(data_sorted)))
+    print("data:    " + str(data_sorted))
+    print("scores:  " + str(oracle_scores_sorted))
 
     return data_sorted, oracle_scores_sorted
 
@@ -119,6 +120,7 @@ def experiment_comapre_loss(
     print("Done.")
 
     # sort the daata however we need it 
+    oracle_predictions = data
     sort = np.argsort(oracle_predictions)
     oracle_predictions = oracle_predictions[sort][::-1]
     data = data[sort][::-1]
@@ -134,7 +136,7 @@ def experiment_comapre_loss(
         pool = Pool(n_workers)
         test_algo_predictions = pool.starmap(
             run_learned_count_sketch, zip(repeat(data), repeat(oracle_predictions), 
-            n_hashes, n_buckets, repeat('count_sketch'), repeat(True)))
+            n_hashes, n_buckets, repeat('count_sketch'), repeat(False)))
         pool.close()
         pool.join()
 
@@ -191,7 +193,9 @@ def experiment_comapre_loss(
         true_values=true_values,
         oracle_predictins=oracle_predictions,
         test_algo_predictions=test_algo_predictions,
+        test_algo_predictions_cutoff= test_results_learned_cutoff,
         test_count_sketch_predictions=test_count_sketch_predictions,
+        test_count_sketch_predictions_cutoff=test_results_just_cutoff,
         n_hashes=n_hashes,
         n_buckets=n_buckets,
         space_list=space_list)

@@ -20,7 +20,7 @@ such that 1) there are at least min_size elements per buckets
 and 2) the min-max arange in each bucket is smallest
 (implemented as a greedy algorithm) 
 '''
-def weighted_split(probs, n, min_size=1, eps=0.025):
+def weighted_split(probs, n, min_size=1, eps=0.05):
     splits = np.array_split(probs, n)
     
     didChange = True
@@ -69,29 +69,59 @@ def weighted_split(probs, n, min_size=1, eps=0.025):
 # learned_count_min_sketch uses the frequency prediction oracle 
 # and count min sketch 
 def learned_count_sketch_just_cutoff(items, scores, n_hash, n_buckets):
+    
+    # resulting estimates returned for each item 
+    item_est = np.zeros(len(items))
 
     # TODO: figure out what cutoff to use
-    cutoff_thresh = int(10000 / 2) # need extra 4 bytes to store ID of element; hence divide by 2
+    cutoff_thresh = int(min(n_buckets, len(items) * 0.1)) # store top 10% of items in table or n_buckets if smaller
+   
+    # store perfect predictions for all cutoff items
+    for i in range(cutoff_thresh):
+        item_est[i] = items[i] 
+
     # cutoff the most frequent items
     items = items[cutoff_thresh:]
-    scores = scores[cutoff_thresh:]
-    n_buckets -= int(cutoff_thresh/n_hash) # used 1*n_buckets worth of bytes to store top frequent items 
+    n_buckets -= int(cutoff_thresh*2/n_hash) # need extra 4 bytes to store ID of element; hence mult by 2
 
     # get count min sketch estimates for the remaining (non cutoff) items
-    _, loss, _, _ = count_sketch(items, n_buckets, n_hash) 
+    estimates = count_sketch(items, n_buckets, n_hash) 
 
-    return loss
+    for i in range(len(estimates)):
+        item_est[cutoff_thresh + i] = estimates[i]
+
+    return item_est
 
 # learned_count_min_sketch uses the frequency prediction oracle 
 # and count min sketch 
 def learned_count_sketch_partitions(items, estimates, n_hash, n_buckets, cutoff=False):
+
+    space = n_hash * n_buckets
+    n_hash = 2 # we're using count-min; use 2 hash functions
+    n_buckets = int(space / n_hash)
+
+    # resulting estimates returned for each item 
+    item_est = np.zeros(len(items))
+    cutoff_thresh = 0
+    if cutoff:
+        # need extra 4 bytes to store ID of element;
+        cutoff_thresh = int(min(n_buckets, len(items) * 0.1)) # need extra 4 bytes to store ID of element; hence mult by 2
+        print("cutoff threshold is " + str(cutoff_thresh))
+   
+        # store perfect predictions for all cutoff items
+        for i in range(cutoff_thresh):
+            item_est[i] = items[i] 
+
+        # cutoff the most frequent items
+        items = items[cutoff_thresh:]
+        estimates = estimates[cutoff_thresh:]
 
     # SANITY CHECKING
     n_buckets_original = n_buckets
     ####################################
 
     # TODO: figure out what the optimal number of partitions is...
-    n_partitions = int(n_buckets / 4000.0)
+    n_partitions = int(max(n_buckets / 4000, 10))
     n_count_sketch_partitions = -1 # number of partitions running count sketch
 
     # reduce space for sketch that was allocated to the weighted element data structure
@@ -111,9 +141,6 @@ def learned_count_sketch_partitions(items, estimates, n_hash, n_buckets, cutoff=
     print("Partition sizes: " + str(sizes))
     print("Partition buckets: " + str(n_buckets))
     
-    # estimates returned for each item 
-    item_est = np.zeros(len(items))
-
     start = 0 # partition start index in the items list
     end = 0 # partition end index
     
@@ -187,21 +214,21 @@ def learned_count_sketch_partitions(items, estimates, n_hash, n_buckets, cutoff=
                 
                 sketch_estimates_corrected = sketch_estimates / sketch_collisions
                 sketch_min = sketch_estimates_corrected[0]
-                item_est[start+j] = round(sketch_min)
-                loss_per_partition_sanity_check += np.abs(item_est[start+j] - part_items[j])
+                item_est[cutoff_thresh + start+j] = round(sketch_min)
+                loss_per_partition_sanity_check += np.abs(item_est[cutoff_thresh+start+j] - part_items[j])
          
-                if j < 5:
+                if j < 0:
                     print()
                     print("partition size       " + str(len(splits[i])))
                     print("sketch_collisions    " + str(sketch_collisions))
                     print("estimates            " + str(sketch_estimates))
-                    print("min (uncorrected)    " + str(np.abs(np.median(sketch_estimates))))
+                    print("min (uncorrected)    " + str(np.min(sketch_estimates)))
                     print("min (corrected)      " + str(item_est[start+j]))
                     print("actual count:         " + str(part_items[j]))                 
 
             else:
-                item_est[start+j] = np.abs(np.median(sketch_estimates))
-                loss_per_partition_sanity_check += np.abs(item_est[start+j] - part_items[j])
+                item_est[cutoff+start+j] = np.abs(np.median(sketch_estimates))
+                loss_per_partition_sanity_check += np.abs(item_est[cutoff_thresh+start+j] - part_items[j])
 
             # if j < 5:
             #     print("--------------------------------" )
@@ -211,12 +238,12 @@ def learned_count_sketch_partitions(items, estimates, n_hash, n_buckets, cutoff=
             #     print("--------------------------------" )
 
         # standard deviations for each hash function
-        print("===================================")
-        print("max " + str(np.max(part_items)))
-        print("min " + str(np.min(part_items)))
-        print("std " + str(np.std(part_items)))
-        print("loss " + str(loss_per_partition_sanity_check / len(part_items)))
-        print("===================================")
+        # print("===================================")
+        # print("max " + str(np.max(part_items)))
+        # print("min " + str(np.min(part_items)))
+        # print("std " + str(np.std(part_items)))
+        # print("loss " + str(loss_per_partition_sanity_check / len(part_items)))
+        # print("===================================")
 
     # make sure we're not using more buckets than originally allocated to the algorithm
     if buckets_total_sanity_check > n_buckets_original:

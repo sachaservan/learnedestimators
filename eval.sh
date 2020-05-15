@@ -1,3 +1,52 @@
+# === INTERNET TRAFFIC ===
+python3 learned_eval.py \
+   --space_list 1 \
+   --n_hashes_list 5 \
+   --save_file ip_learned_sketch_experiment_results \
+   --save_folder experiments \
+   --n_workers 1 \
+   --dataset ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
+   --model  paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
+   --run_learned_version \
+   --run_regular_count_sketch \
+   --run_cutoff_version \
+
+
+
+# === AOL ===
+# python3 learned_eval.py \
+#    --aol_data \
+#    --space_list 0.2 1.2 2 \
+#    --n_hashes 5 \
+#    --save_file aol_learned_sketch_experiment_results \
+#    --save_folder experiments \
+#    --n_workers 1 \
+#    --dataset  ./data/aol_0005_len60.npz \
+#    --model  paper_predictions/aol_inf_all_v05_t06_exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra_20180514-160509_ep190_res.npz \
+#    --run_cutoff_version \
+#    --run_regular_count_sketch \
+#    --run_learned_version \
+
+
+# === SYNTHETIC===
+# python3 learned_eval.py \
+#    --synth_data \
+#    --space_list 0.1 0.2 \
+#    --n_hashes 5 \
+#    --save_file synth_learned_sketch_experiment_results \
+#    --save_folder experiments \
+#    --n_workers 1 \
+#    --run_regular_count_sketch \
+#    --run_learned_version \
+
+
+
+
+
+
+
+
+
 
 # === Internet Traffic ===
 #    --space_list 0.1 0.2 0.3 0.4 0.5 0.6 0.7 0.8 0.9 1 1.2 1.4 1.6 1.8 2 3 4 \
@@ -8,19 +57,19 @@
 #    --test_result   paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
 #    --valid_result  paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz
 
-# learned count sketch
-python3 learned_eval.py \
-   --space_list 4 \
-   --n_hashes_list 5 \
-   --save_file learned_sketch_experiment_results \
-   --save_folder experiments \
-   --n_workers 1 \
-   --dataset ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
-   --model  paper_predictions/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
-   --run_regular_count_sketch \
-   --run_learned_version \
-   # --run_cutoff_version \
-   # --run_perfect_oracle_version \
+
+# python3 learned_eval.py \
+#    --aol_data \
+#    --space_list 0.2 1.2 \
+#    --n_hashes 5 \
+#    --save_file aol_learned_sketch_experiment_results \
+#    --save_folder experiments \
+#    --n_workers 1 \
+#    --dataset  ./data/aol_0005_len60.npz \
+#    --model  paper_predictions/aol_inf_all_v05_t06_exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra_20180514-160509_ep190_res.npz \
+#    --run_regular_count_sketch \
+#    --run_learned_version \
+  # --run_cutoff_version \
 
 # count min
 # python3 learned_eval.py \

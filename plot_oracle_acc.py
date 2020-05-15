@@ -90,19 +90,33 @@ if __name__ == '__main__':
             algo_predictions = np.array(data['test_algo_predictions'])[space_index][:subset]
             count_sketch_predictions = np.array(data['test_count_sketch_predictions'])[space_index][:subset]
 
+            algo_predictions_cutoff = np.array(data['test_algo_predictions_cutoff'])[space_index][:subset]
+            count_sketch_predictions_cutoff = np.array(data['test_count_sketch_predictions_cutoff'])[space_index][:subset]
+
+            algo_predictions += 000.1 # avoid division by zero
+            count_sketch_predictions += 000.1 # avoid division by zero
+            count_sketch_predictions_cutoff += 000.1 # avoid division by zero
+            algo_predictions_cutoff += 000.1 # avoid dividion by zero
+
             # sort the predictions according to the true frequency
             algo_predictions = algo_predictions[sort][::-1]
+            algo_predictions_cutoff = algo_predictions_cutoff[sort][::-1]
             count_sketch_predictions = count_sketch_predictions[sort][::-1]
+            count_sketch_predictions_cutoff = count_sketch_predictions_cutoff[sort][::-1]
 
             # compute the abs and relative erros for all items
             abs_error_oracle_raw = np.abs(true_counts - pred_counts) 
             rel_error_oracle_raw = abs_error_oracle_raw / true_counts
 
             abs_error_algo_raw = np.abs(true_counts - algo_predictions) 
+            abs_error_algo_cutoff_raw = np.abs(true_counts - algo_predictions_cutoff) 
             rel_error_algo_raw = abs_error_algo_raw / true_counts
-        
+            rel_error_algo_cutoff_raw = abs_error_algo_cutoff_raw / true_counts
+
             abs_error_sketch_raw = np.abs(true_counts - count_sketch_predictions) 
+            abs_error_sketch_cutoff_raw = np.abs(true_counts - count_sketch_predictions_cutoff) 
             rel_error_sketch_raw = abs_error_sketch_raw / true_counts
+            rel_error_sketch_cutoff_raw = abs_error_sketch_cutoff_raw / true_counts
 
             # grouped abs and relative errors 
             abs_error_oracle = np.array_split(abs_error_oracle_raw, N)
@@ -110,9 +124,13 @@ if __name__ == '__main__':
         
             abs_error_algo = np.array_split(abs_error_algo_raw, N)
             rel_error_algo = np.array_split(rel_error_algo_raw, N)
-        
+            abs_error_algo_cutoff = np.array_split(abs_error_algo_cutoff_raw, N)
+            rel_error_algo_cutoff = np.array_split(rel_error_algo_cutoff_raw, N)
+
             abs_error_sketch = np.array_split(abs_error_sketch_raw, N)
             rel_error_sketch = np.array_split(rel_error_sketch_raw, N)
+            abs_error_sketch_cutoff = np.array_split(abs_error_sketch_cutoff_raw, N)
+            rel_error_sketch_cutoff = np.array_split(rel_error_sketch_cutoff_raw, N)
 
             grouped_abs_error_oracle = np.array([np.mean(x) for x in abs_error_oracle])
             grouped_rel_error_oracle = np.array([np.mean(x) for x in rel_error_oracle]) 
@@ -124,10 +142,20 @@ if __name__ == '__main__':
             grouped_abs_error_algo_std = np.array([np.std(x) for x in abs_error_algo])
             grouped_rel_error_algo_std = np.array([np.std(x) for x in rel_error_algo])
 
+            grouped_abs_error_algo_cutoff = np.array([np.mean(x) for x in abs_error_algo_cutoff])
+            grouped_rel_error_algo_cutoff = np.array([np.mean(x) for x in rel_error_algo_cutoff]) 
+            grouped_abs_error_algo_cutoff_std = np.array([np.std(x) for x in abs_error_algo_cutoff])
+            grouped_rel_error_algo_cutoff_std = np.array([np.std(x) for x in rel_error_algo_cutoff])
+
             grouped_abs_error_sketch = np.array([np.mean(x) for x in abs_error_sketch])
             grouped_rel_error_sketch = np.array([np.mean(x) for x in rel_error_sketch]) 
             grouped_abs_error_sketch_std = np.array([np.std(x) for x in abs_error_sketch])
             grouped_rel_error_sketch_std = np.array([np.std(x) for x in rel_error_sketch])
+
+            grouped_abs_error_sketch_cutoff = np.array([np.mean(x) for x in abs_error_sketch_cutoff])
+            grouped_rel_error_sketch_cutoff = np.array([np.mean(x) for x in rel_error_sketch_cutoff]) 
+            grouped_abs_error_sketch_cutoff_std = np.array([np.std(x) for x in abs_error_sketch_cutoff])
+            grouped_rel_error_sketch_cutoff_std = np.array([np.std(x) for x in rel_error_sketch_cutoff])
 
             grouped_true_counts = np.array([np.mean(x) for x in np.array_split(true_counts, N)])
             grouped_oracle_counts = np.array([np.mean(x) for x in np.array_split(pred_counts, N)])
@@ -143,9 +171,11 @@ if __name__ == '__main__':
             # x axis for the plot
             x_range = (np.array(range(N)) / N) 
 
-            ax_abs.plot(x_range, grouped_abs_error_oracle, color=color_alt, label="Oracle Prediction", linestyle='--')
+            #ax_abs.plot(x_range, grouped_abs_error_oracle, color=color_alt, label="Oracle Prediction", linestyle='--')
             ax_abs.plot(x_range, grouped_abs_error_algo, color=color_alt2, label="Learned Count Sketch")
             ax_abs.plot(x_range, grouped_abs_error_sketch, color=color_alt3, label="Count Sketch")
+            ax_abs.plot(x_range, grouped_abs_error_algo_cutoff, label="Learned Count Sketch + cutoff", linestyle='-')
+            ax_abs.plot(x_range, grouped_abs_error_sketch_cutoff, label="Count Sketch + cutoff", linestyle='-')
 
             # compute standard error std/sqrt(n)
             # https://en.wikipedia.org/wiki/Standard_error
@@ -180,9 +210,11 @@ if __name__ == '__main__':
 
 
             # plot relative error
-            ax_rel.plot(x_range, grouped_rel_error_oracle, color=color_alt, label="Oracle Prediction", linestyle='--')
+            #ax_rel.plot(x_range, grouped_rel_error_oracle, color=color_alt, label="Oracle Prediction", linestyle='--')
             ax_rel.plot(x_range, grouped_rel_error_algo, color=color_alt2, label="Learned Count Sketch")
             ax_rel.plot(x_range, grouped_rel_error_sketch, color=color_alt3, label="Count Sketch")
+            ax_rel.plot(x_range, grouped_rel_error_algo_cutoff, label="Learned Count Sketch + cutoff", linestyle='-')
+            ax_rel.plot(x_range, grouped_rel_error_sketch_cutoff, label="Count Sketch + cutoff", linestyle='-')
             ax_rel.legend(loc='best')
 
 
