@@ -5,7 +5,8 @@ import argparse
 import random
 import datetime
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 from utils.aol_utils import get_data_aol_feat_list
 from utils.utils import get_stat, git_log, AverageMeter, keep_latest_files
@@ -68,7 +69,7 @@ def construct_graph(args):
             output = tf.nn.relu(tf.squeeze(output))
         else:
             output = tf.squeeze(output)
-        loss = tf.losses.mean_squared_error(labels=labels[:data_len], predictions=output[:data_len])
+        loss = tf.losses.absolute_difference(labels=labels[:data_len], predictions=output[:data_len])
 
         # log gradients
         if args.log_hist:
