@@ -6,3 +6,4 @@ log/
 model/
 predictions/
 experiments/
+env/
