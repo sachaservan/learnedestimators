@@ -7,7 +7,7 @@ import numpy as np
 from itertools import repeat
 from multiprocessing import Pool
 from utils import get_data, get_stat, git_log, feat_to_string, get_data_str_with_ports_list
-from sketches import count_min, count_sketch
+from sketches import count_min, count_sketch, log_count_min
 from sketch_utils import order_y_wkey_list
 from weighted_distinct_elements import compute_sum_estimate
 from learned_sketches import  learned_count_sketch_just_cutoff, learned_count_sketch_partitions
@@ -18,12 +18,13 @@ def run_count_sketch(y, n_hashes, n_buckets, name):
     return estimates
 
 def run_learned_count_sketch(y, y_scores, n_hashes, n_buckets, name, cutoff): 
-    estimates = learned_count_sketch_partitions(y, y_scores, n_hashes, n_buckets, cutoff)
-    return estimates
+    estimates, loss_per_partition = learned_count_sketch_partitions(y.copy(), y_scores.copy(), n_hashes, n_buckets, cutoff)
+    return estimates, loss_per_partition
 
 def run_learned_count_sketch_just_cutoff(y, y_scores, n_hashes, n_buckets, name):
     loss = learned_count_sketch_just_cutoff(y, y_scores, n_hashes, n_buckets)
     return loss
+
 
 def load_dataset(dataset, model, is_aol=False, is_synth=False):
 
@@ -53,8 +54,8 @@ def load_dataset(dataset, model, is_aol=False, is_synth=False):
     print("Loading model...")
     key = 'valid_output'
     data, oracle_scores = order_y_wkey_list(y_valid, model, key)
-    # if not is_aol:
-    #     oracle_scores= np.exp(oracle_scores)
+    if not is_aol:
+        oracle_scores= np.exp(oracle_scores)
     print("done.")
 
 
@@ -77,18 +78,6 @@ def load_dataset(dataset, model, is_aol=False, is_synth=False):
 
 def experiment_oracle_accuracy(data, scores):
     
-    # scores_fp = (scores).astype(int) # fixpoint encode the real values
-    # scores_total, space_in_bytes = compute_sum_estimate(scores_fp, 0.05, n_reg=16)
-
-    # print("--------------------------------")
-    # print("Weighted distinct elements:")
-    # print(" - estimated sum: " + str(int(scores_total)))
-    # print(" - actual sum:    " + str(int(np.sum(scores))))
-    # print(" - space used: " + str(space_in_bytes) + " bytes")
-    # print("--------------------------------")
-
-    #predictions = (scores * np.sum(data)) / np.sum(scores)
-
     print("--------------------------------")
     print("actual counts:    " + str(data))
     print("predicted counts: " + str(scores))
@@ -111,7 +100,6 @@ def experiment_comapre_loss(
     run_cutoff_experiment=False, 
     run_perfect_oracle_experiment=False):
 
-
     #################################################################
     # compare oracle predictions to actual data
     #################################################################
@@ -119,26 +107,30 @@ def experiment_comapre_loss(
     true_values, oracle_predictions = experiment_oracle_accuracy(data, oracle_scores)
     print("Done.")
 
-    # sort the daata however we need it 
-    oracle_predictions = data
-    sort = np.argsort(oracle_predictions)
-    oracle_predictions = oracle_predictions[sort][::-1]
-    data = data[sort][::-1]
-    true_values = true_values[sort][::-1]
+    # sort the data however we need it 
+    sort = np.argsort(oracle_predictions)[::-1]
+    oracle_predictions = oracle_predictions[sort]
+    data = data[sort]
+    true_values = true_values[sort]
 
     #################################################################
     # evaluate vanilla sketching algorithm against learned sketches
     #################################################################
     test_algo_predictions = []
+    loss_per_partition = []
     if run_learned_experiment:
         print("Running learned count sketch")
         # learned algorithm with no cutoff 
         pool = Pool(n_workers)
-        test_algo_predictions = pool.starmap(
+        results = pool.starmap(
             run_learned_count_sketch, zip(repeat(data), repeat(oracle_predictions), 
             n_hashes, n_buckets, repeat('count_sketch'), repeat(False)))
         pool.close()
         pool.join()
+        test_algo_predictions = [x[0] for x in results]
+        loss_per_partition = [x[1] for x in results]
+        print("L1 loss " + str(np.sum(np.abs(data - test_algo_predictions))))
+        print("L2 loss " + str(np.sum(np.abs(data - test_algo_predictions)**2)))
 
 
     # learned algo with cutoff 
@@ -166,7 +158,6 @@ def experiment_comapre_loss(
         pool.close()
         pool.join()
 
-
     # vanilla count sketch
     test_count_sketch_predictions = []
     if run_regular_count_sketch:
@@ -181,7 +172,7 @@ def experiment_comapre_loss(
                 run_count_sketch, zip(repeat(data), n_hashes, n_buckets, repeat('count_sketch')))
             pool.close()
             pool.join()
-
+        
             # save the results for future use
             np.savez(os.path.join(save_folder, save_file + "count_sketch_results"),
             test_results_count_sketch=test_count_sketch_predictions)
@@ -196,6 +187,7 @@ def experiment_comapre_loss(
         test_algo_predictions_cutoff= test_results_learned_cutoff,
         test_count_sketch_predictions=test_count_sketch_predictions,
         test_count_sketch_predictions_cutoff=test_results_just_cutoff,
+        test_loss_per_partition=loss_per_partition,
         n_hashes=n_hashes,
         n_buckets=n_buckets,
         space_list=space_list)

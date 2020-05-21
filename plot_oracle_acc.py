@@ -89,14 +89,27 @@ if __name__ == '__main__':
             print(data['space_list'][space_index])
             algo_predictions = np.array(data['test_algo_predictions'])[space_index][:subset]
             count_sketch_predictions = np.array(data['test_count_sketch_predictions'])[space_index][:subset]
+            loss_per_partition = np.array(data['test_loss_per_partition'])[space_index][:subset]
 
-            algo_predictions_cutoff = np.array(data['test_algo_predictions_cutoff'])[space_index][:subset]
-            count_sketch_predictions_cutoff = np.array(data['test_count_sketch_predictions_cutoff'])[space_index][:subset]
+            # ax = plt.figure().gca()
+            # ax.bar(range(len(loss_per_partition)), loss_per_partition)
+            # ax.set_ylim([0, np.max(loss_per_partition)+100])
+            # ax.set_xlabel('bucket id')
+            # ax.set_ylabel('# packets')
+            # plt.show()
 
-            algo_predictions += 000.1 # avoid division by zero
-            count_sketch_predictions += 000.1 # avoid division by zero
-            count_sketch_predictions_cutoff += 000.1 # avoid division by zero
-            algo_predictions_cutoff += 000.1 # avoid dividion by zero
+            algo_predictions_cutoff = np.zeros(len(algo_predictions))
+            if len(np.array(data['test_algo_predictions_cutoff'])) != 0:
+                algo_predictions_cutoff = np.array(data['test_algo_predictions_cutoff'])[space_index][:subset]
+
+            count_sketch_predictions_cutoff = np.zeros(len(algo_predictions))
+            if len(np.array(data['test_count_sketch_predictions_cutoff'])) != 0:
+                count_sketch_predictions_cutoff = np.array(data['test_count_sketch_predictions_cutoff'])[space_index][:subset]
+
+            # algo_predictions += 000.1 # avoid division by zero
+            # count_sketch_predictions += 000.1 # avoid division by zero
+            # count_sketch_predictions_cutoff += 000.1 # avoid division by zero
+            # algo_predictions_cutoff += 000.1 # avoid dividion by zero
 
             # sort the predictions according to the true frequency
             algo_predictions = algo_predictions[sort][::-1]
@@ -109,6 +122,9 @@ if __name__ == '__main__':
             rel_error_oracle_raw = abs_error_oracle_raw / true_counts
 
             abs_error_algo_raw = np.abs(true_counts - algo_predictions) 
+            print("L1 loss (learned) " + str(np.sum(abs_error_algo_raw)))
+            print("L2 loss (learned) " + str(np.sum(abs_error_algo_raw**2)))
+
             abs_error_algo_cutoff_raw = np.abs(true_counts - algo_predictions_cutoff) 
             rel_error_algo_raw = abs_error_algo_raw / true_counts
             rel_error_algo_cutoff_raw = abs_error_algo_cutoff_raw / true_counts
@@ -117,6 +133,8 @@ if __name__ == '__main__':
             abs_error_sketch_cutoff_raw = np.abs(true_counts - count_sketch_predictions_cutoff) 
             rel_error_sketch_raw = abs_error_sketch_raw / true_counts
             rel_error_sketch_cutoff_raw = abs_error_sketch_cutoff_raw / true_counts
+            print("L1 loss (sketch)  " + str(np.sum(abs_error_sketch_raw)))
+            print("L2 loss (sketch)  " + str(np.sum(abs_error_sketch_raw**2)))
 
             # grouped abs and relative errors 
             abs_error_oracle = np.array_split(abs_error_oracle_raw, N)

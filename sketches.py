@@ -29,6 +29,30 @@ def count_min(items, n_buckets, n_hash):
 
     return item_est
 
+''' 
+regular count min algorithm 
+'''
+def log_count_min(items, n_buckets, n_hash):
+    space = n_buckets * n_hash
+    n_hash = 2
+    n_buckets = int(space / n_hash) * 10
+
+    counts_all = np.zeros((n_hash, n_buckets))
+    item_buckets_all = np.zeros((n_hash, len(items)), dtype=int)
+    for i in range(n_hash):
+        counts, loss, item_buckets = random_hash(items, n_buckets)
+        counts_all[i] = counts
+        item_buckets_all[i] = item_buckets
+
+    item_est = np.zeros(len(items))
+    for i in range(len(items)): 
+        sketch_estimates = [counts_all[k, item_buckets_all[k, i]] for k in range(n_hash)]
+        sketch_estimates = np.array([2**round(math.log(x, 2)) for x in sketch_estimates])
+        item_est[i] = np.min(sketch_estimates)
+
+    return item_est
+
+
 
 ''' 
 regular count sketch algorithm 
