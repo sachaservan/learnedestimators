@@ -118,12 +118,11 @@ def find_best_parameters(test_data, test_oracle_scores, space_list, space_alloca
                 test_params_cutoff_thresh))
             pool.close()
             pool.join()
+
         test_algo_predictions = [x[0] for x in results]
         losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_algo_predictions]
         best_loss_idx = np.argmin(losses)
-        print("L2 losses " + str(losses))
-        print("Best L2 loss " + str(losses[best_loss_idx]))
-
+      
         space_cs = test_space_cs[best_loss_idx]
         space_cmin = test_space_cmin[best_loss_idx]
         partitions = test_params_partitions[best_loss_idx]
@@ -133,6 +132,8 @@ def find_best_parameters(test_data, test_oracle_scores, space_list, space_alloca
         best_partitions_for_space.append(partitions)
         best_cutoff_thresh_for_space.append(cutoff_thresh)
 
+    print("All L2 losses       " + str(losses))
+    print("Best L2 loss        " + str(losses[best_loss_idx]))
     print("Best space cs:      " + str(best_space_cs))
     print("Best space cmin:    " + str(best_space_cmin))
     print("Best partitions:    " + str(partitions))
