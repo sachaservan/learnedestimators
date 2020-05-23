@@ -5,7 +5,6 @@ import numpy as np
 import math
 import matplotlib
 import matplotlib.pyplot as plt
-import pandas as pd
 ###########################
 
 
@@ -52,7 +51,7 @@ if __name__ == '__main__':
         subset = -1 # show results only up to index; set to index value
         data = np.load(args.data,  allow_pickle=True)
         true_counts = np.array(data['true_values'])[:subset]
-        pred_counts = np.array(data['oracle_predictins'])[:subset]
+        pred_counts = np.array(data['oracle_predictions'])[:subset]
         space_list = data['space_list']
         pred_counts = np.exp(pred_counts)
 
@@ -65,7 +64,7 @@ if __name__ == '__main__':
         num_data_points = len(true_counts)
 
         # plot absolute error
-        fig, (ax_abs, ax_rel, ax_true) = plt.subplots(3)
+        fig, (ax_abs, ax_rel) = plt.subplots(2)
         # ax_abs.invert_xaxis()
         # ax_rel.invert_xaxis()
 
@@ -82,14 +81,14 @@ if __name__ == '__main__':
 
         for space_index in range(len(space_list)): 
 
-            if space_index != len(space_list)-1: # space_index != 0: # 
+            if space_index != len(space_list)-3: # space_index != 0: # 
                 continue
 
             # already sorted
             print(data['space_list'][space_index])
-            algo_predictions = np.array(data['test_algo_predictions'])[space_index][:subset]
-            count_sketch_predictions = np.array(data['test_count_sketch_predictions'])[space_index][:subset]
-            loss_per_partition = np.array(data['test_loss_per_partition'])[space_index][:subset]
+            algo_predictions = np.array(data['valid_algo_predictions'])[space_index][:subset]
+            count_sketch_predictions = np.array(data['valid_count_sketch_predictions'])[space_index][:subset]
+            loss_per_partition = np.array(data['valid_loss_per_partition'])[space_index][:subset]
 
             # ax = plt.figure().gca()
             # ax.bar(range(len(loss_per_partition)), loss_per_partition)
@@ -99,12 +98,12 @@ if __name__ == '__main__':
             # plt.show()
 
             algo_predictions_cutoff = np.zeros(len(algo_predictions))
-            if len(np.array(data['test_algo_predictions_cutoff'])) != 0:
-                algo_predictions_cutoff = np.array(data['test_algo_predictions_cutoff'])[space_index][:subset]
+            # if len(np.array(data['valid_algo_predictions_cutoff'])) != 0:
+            #     algo_predictions_cutoff = np.array(data['valid_algo_predictions_cutoff'])[space_index][:subset]
 
             count_sketch_predictions_cutoff = np.zeros(len(algo_predictions))
-            if len(np.array(data['test_count_sketch_predictions_cutoff'])) != 0:
-                count_sketch_predictions_cutoff = np.array(data['test_count_sketch_predictions_cutoff'])[space_index][:subset]
+            # if len(np.array(data['valid_count_sketch_predictions_cutoff'])) != 0:
+            #     count_sketch_predictions_cutoff = np.array(data['valid_count_sketch_predictions_cutoff'])[space_index][:subset]
 
             # algo_predictions += 000.1 # avoid division by zero
             # count_sketch_predictions += 000.1 # avoid division by zero
@@ -233,7 +232,6 @@ if __name__ == '__main__':
             ax_rel.plot(x_range, grouped_rel_error_sketch, color=color_alt3, label="Count Sketch")
             ax_rel.plot(x_range, grouped_rel_error_algo_cutoff, label="Learned Count Sketch + cutoff", linestyle='-')
             ax_rel.plot(x_range, grouped_rel_error_sketch_cutoff, label="Count Sketch + cutoff", linestyle='-')
-            ax_rel.legend(loc='best')
 
 
             # compute standard error std/sqrt(n)
@@ -263,15 +261,17 @@ if __name__ == '__main__':
             ax_rel.set_ylabel("Relative Error")
 
 
-            ax_true.plot(x_range, grouped_true_counts, label="True Frequency")
-            #ax_true.plot(x_range, grouped_oracle_counts, color=color_alt, label="Oracle Prediction", linestyle='--')
-            ax_true.plot(x_range, grouped_true_counts_sorted, color=color_alt3, label="Sorted by Oracle")
-            ax_true.yaxis.grid(color=gridcolor, linestyle=linestyle)
-            ax_true.xaxis.grid(color=gridcolor, linestyle=linestyle)
-            ax_true.set_axisbelow(True)
-            ax_true.set_yscale('log')
-            ax_true.set_ylabel("Frequency")
-            ax_true.set_xlabel('Cumulative Distribution')
+            # ax_true.plot(x_range, grouped_true_counts, label="True Frequency")
+            # #ax_true.plot(x_range, grouped_oracle_counts, color=color_alt, label="Oracle Prediction", linestyle='--')
+            # ax_true.plot(x_range, grouped_true_counts_sorted, color=color_alt3, label="Sorted by Oracle")
+            # ax_true.yaxis.grid(color=gridcolor, linestyle=linestyle)
+            # ax_true.xaxis.grid(color=gridcolor, linestyle=linestyle)
+            # ax_true.set_axisbelow(True)
+            # ax_true.set_yscale('log')
+            ax_rel.set_ylabel("Frequency")
+            ax_rel.set_xlabel('Cumulative Distribution')
+
+            ax_abs.legend(loc='best')
 
         plt.legend(loc='best')
         plt.savefig(file_name)

@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
+import math 
 ###########################
 
 
@@ -65,12 +66,13 @@ if __name__ == '__main__':
 
         space = np.array(data['space_list'])
         true_counts = np.array(data['true_values'])
-        algo_predictions = np.array(data['test_algo_predictions'])
-        count_sketch_predictions = np.array(data['test_count_sketch_predictions'])
+        pred_counts = np.array(data['oracle_predictions'])
+        algo_predictions = np.array(data['valid_algo_predictions'])
+        count_sketch_predictions = np.array(data['valid_count_sketch_predictions'])
 
         total = len(true_counts)
         
-        space_percent = [round(x) for x in (space*100000000) / (len(true_counts) * 4)]
+        space_percent = [math.ceil(x) for x in (space*1e8) / ((len(true_counts)-1) * 4)]
 
         for i in range(len(loss_functions)):
             loss_sketch_i = []
@@ -101,7 +103,7 @@ if __name__ == '__main__':
 
             ax = plt.figure().gca()
 
-            ax.plot(space_percent, loss_sketch_i, label="count sketch", linewidth=3, color=colors[0], zorder=5)
+            ax.plot(space_percent, loss_sketch_i, label="Count Sketch", linewidth=3, color=colors[0], zorder=5)
             ax.plot(space_percent, loss_learned_i, label=args.algo, linewidth=3, color=colors[1], zorder=6)
             # ax.plot(space, loss_just_cutoff_i, label="count sketch (cutoff)", linestyle='dashdot', color=colors[3])
             # ax.plot(space, loss_learned_cutoff_i, label=args.algo + " (cutoff)", linestyle='dashdot', color=colors[2])
@@ -130,81 +132,41 @@ if __name__ == '__main__':
             plt.savefig(save_file_names[i])
 
 
-    fig, ax = plt.subplots(figsize=(12, 8))
+    # fig, ax = plt.subplots(figsize=(12, 8))
 
-    # if args.data:
-    #     data = np.load(args.data)
-    #     space = data['space_list']
-    #     selections = data['selections_oracle_no_cutoff']    
-    #     false_selections = data['false_selections_oracle_no_cutoff']    
 
-    #     for i in range(len(selections)):
+
+    # true_counts = np.array(data['true_values'])
+    # sort = np.argsort(true_counts)[::-1]
+
+    # n_partitions = 2
+    # partition_step = int(math.ceil(len(true_counts)/n_partitions))
+    # min_index = 0
+    # max_index = partition_step
+    # j = 0
+    # incorrect = np.zeros(n_partitions)
+    # for i in range(len(sort)):
+    #     if sort[i] > max_index or sort[i] < min_index:
+    #         incorrect[j] += 1
+    #     if i != 0 and i % partition_step == 0:
+    #         min_index += partition_step
+    #         max_index += partition_step
+    #         j += 1
     
-    #         grouped_selections = np.array_split(np.array(selections[i]), 200)
-    #         grouped_false_selections = np.array_split(np.array(false_selections[i]), 200)
-    #         grouped_avg = []
-    #         grouped_false_avg = []
-    #         for j in range(len(grouped_selections)):
-    #             grouped_avg.append(np.mean(grouped_selections[j]))
-    #             grouped_false_avg.append(np.mean(grouped_false_selections[j]))
+    # x = np.arange(n_partitions)
+    # percent_incorrect = np.array(incorrect)/partition_step
 
-    #         x = range(len(grouped_avg))
-    #         x_false = range(len(grouped_false_avg))
-    #         coef = np.polyfit(x, grouped_false_avg, 1) 
-    #         coef_false = np.polyfit(x, grouped_false_avg, 1) 
-    #         poly1d_fn = np.poly1d(coef) 
-    #         poly1d_false_fn = np.poly1d(coef_false) 
-    #         ax.scatter(x, grouped_avg)
-    #         ax.scatter(x, grouped_false_avg)
-    #         # ax.plot(x, poly1d_fn(x), '--')   
-    #         # ax.plot(x_false, poly1d_fn(x_false), '--')   
+    # # Define bar width. We'll use this to offset the second bar.
+    # bar_width = 0.25
 
-    #     ax.set_yscale('log')
-    #     #ax.set_xscale('log')
-    #     ax.set_ylabel('Fraction of Predictions Selected')
-    #     ax.set_xlabel('Item Frequency')
-    #     plt.legend(loc='best')
-    #     #plt.show()
-    #     plt.savefig('experiments/selection.pdf')
+    # print(sort[:100])
 
-    exit(0)
-    if args.data:
-        data = np.load(args.data)
-        space = data['space_list']
-      
-        selections_raw = data['selections_oracle_no_cutoff']    
-        false_selections_raw = data['false_selections_oracle_no_cutoff'] 
+    # # Same thing, but offset the x by the width of the bar.
+    # b1 = ax.bar(x, percent_incorrect, width=bar_width, label='Oracle', color=colors[1])
+                
 
-        percent_selection_oracle = np.zeros(len(space), dtype=float)
-        percent_selection_sketch = np.zeros(len(space), dtype=float)
-        percent_wrong_selection = np.zeros(len(space), dtype=float)
-
-        for i in range(len(space)):
-            percent_selection_oracle[i] = np.sum(selections_raw[i]) / len(selections_raw[i])
-            percent_selection_sketch[i] = 1.0 - percent_selection_oracle[i]
-            percent_wrong_selection[i] = np.sum(false_selections_raw[i]) / len(false_selections_raw[i])
-
-
-        x = np.arange(len(space))
-
-        # Define bar width. We'll use this to offset the second bar.
-        bar_width = 0.25
-
-        # Same thing, but offset the x by the width of the bar.
-        b1 = ax.bar(x, percent_selection_oracle,
-                    width=bar_width, label='Oracle', color=colors[1])
-                    
-        # Note we add the `width` parameter now which sets the width of each bar.
-        b2 = ax.bar(x + bar_width, percent_selection_sketch,
-                    width=bar_width, label='Count Sketch', color=colors[0])
-        
-        # Note we add the `width` parameter now which sets the width of each bar.
-        b3 = ax.bar(x + 2*bar_width, percent_wrong_selection,
-                    width=bar_width, label='Wrong Selection', color='black')
-
-
-        ax.set_ylabel('Fraction of Predictions Selected')
-        ax.set_xlabel('Space (MB)')
-        plt.xticks(x + bar_width, space)
-        plt.legend(loc='best')
-        plt.savefig(save_file_names[3])
+    # ax.set_ylabel('Fraction of Predictions Selected')
+    # ax.set_xlabel('Space (MB)')
+    # plt.xticks(x + bar_width, space)
+    # plt.legend(loc='best')
+    # plt.savefig(save_file_names[3])
