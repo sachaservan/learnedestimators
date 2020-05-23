@@ -4,10 +4,11 @@ import time
 import csv
 import argparse
 import numpy as np
+
 from halo import Halo
 
 from itertools import repeat
-from multiprocessing import Pool
+from multiprocessing import Pool, set_start_method, get_context
 from sketches import count_min, count_sketch
 from learned_sketches import learned_count_sketch_partitions
 
@@ -73,18 +74,19 @@ def find_best_parameters(test_data, test_oracle_scores, space_list, space_alloca
                 test_params_partitions.append(partitions)
 
         print("Learning best parameters for space setting...")
-        pool = Pool(n_workers)
-        results = pool.starmap(
-            run_learned_count_sketch, 
-            zip(repeat(test_data), 
-            repeat(test_oracle_scores), 
-            test_space_cs, 
-            test_space_cmin, 
-            test_params_partitions, 
-            repeat('test_param_learned_count_sketch'), 
-            repeat(False)))
-        pool.close()
-        pool.join()
+        
+        with get_context("spawn").Pool() as pool:
+            results = pool.starmap(
+                run_learned_count_sketch, 
+                zip(repeat(test_data), 
+                repeat(test_oracle_scores), 
+                test_space_cs, 
+                test_space_cmin, 
+                test_params_partitions, 
+                repeat('test_param_learned_count_sketch'), 
+                repeat(False)))
+            pool.close()
+            pool.join()
         test_algo_predictions = [x[0] for x in results]
         losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_algo_predictions]
         best_loss_idx = np.argmin(losses)
@@ -197,12 +199,12 @@ def experiment_comapre_loss_no_cutoff(
         spinner = Halo(text='Evaluating learned count sketch', spinner='dots')
         spinner.start()
 
-        pool = Pool(n_workers)
-        results = pool.starmap(
-            run_learned_count_sketch, zip(repeat(valid_data), repeat(valid_oracle_predictions), 
-            best_space_cs, best_space_cmin, best_partitions, repeat('learned_count_sketch'), repeat(False)))
-        pool.close()
-        pool.join()
+        with get_context("spawn").Pool() as pool:
+            results = pool.starmap(
+                run_learned_count_sketch, zip(repeat(valid_data), repeat(valid_oracle_predictions), 
+                best_space_cs, best_space_cmin, best_partitions, repeat('learned_count_sketch'), repeat(False)))
+            pool.close()
+            pool.join()
       
         valid_algo_predictions = [x[0] for x in results]
         loss_per_partition = [x[1] for x in results]
@@ -219,11 +221,11 @@ def experiment_comapre_loss_no_cutoff(
             n_buckets[i] = int(space/n_hashes[i])
 
         print("Running vanilla count sketch")
-        pool = Pool(n_workers)
-        test_count_sketch_predictions = pool.starmap(
-            run_count_sketch, zip(repeat(valid_data), n_hashes, n_buckets, repeat('count_sketch')))
-        pool.close()
-        pool.join()
+        with get_context("spawn").Pool() as pool:
+            test_count_sketch_predictions = pool.starmap(
+                run_count_sketch, zip(repeat(valid_data), n_hashes, n_buckets, repeat('count_sketch')))
+            pool.close()
+            pool.join()
 
     #################################################################
     # save all results to the folder
@@ -304,6 +306,8 @@ def load_dataset(dataset, model, key, is_aol=False, is_synth=False):
 
 
 if __name__ == '__main__':
+    set_start_method("spawn") # bug fix for deadlock in Pool: https://pythonspeed.com/articles/python-multiprocessing/
+
     argparser = argparse.ArgumentParser(sys.argv[0])
     argparser.add_argument("--test_dataset", type=str, nargs='*', help="list of input .npy data for testing")
     argparser.add_argument("--valid_dataset", type=str, nargs='*', help="list of input .npy data for validation")
