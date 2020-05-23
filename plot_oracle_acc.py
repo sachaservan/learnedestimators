@@ -81,7 +81,7 @@ if __name__ == '__main__':
 
         for space_index in range(len(space_list)): 
 
-            if space_index != len(space_list)-3: # space_index != 0: # 
+            if space_index != len(space_list)-1: # space_index != 0: # 
                 continue
 
             # already sorted

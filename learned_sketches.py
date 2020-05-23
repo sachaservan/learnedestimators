@@ -8,13 +8,11 @@ import numpy as np
 from sketches import count_min, count_sketch
 from sketch_common import hyperloglogsimulate, second_moment_estimate
 
-COUNT_SKETCH_OPTIMAL_N_HASH = 5
-COUNT_MIN_OPTIMAL_N_HASH = 2
-N_REGISTERS_FOR_HLL = 64
-N_BYTES_FOR_SECOND_MOMENT_ESTIMATION = 4 
-EXTRA_SPACE_PER_PARTITION_IN_BYTES = N_REGISTERS_FOR_HLL + N_BYTES_FOR_SECOND_MOMENT_ESTIMATION
+# constants used in experiments 
+from experiment_constants import *
 
-def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partitions, cutoff=False):
+
+def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partitions):
     '''
     learned_count_min_sketch uses the frequency prediction oracle to partition the stream; 
     uses count-sketch for the first partition and count_min sketch (with correction)

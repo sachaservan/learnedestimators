@@ -1,28 +1,42 @@
 # === INTERNET TRAFFIC ===
 
-# find optimal parameters
+# find optimal parameters for regular learned experiment 
 python3 experiments.py \
-   --space_list 0.2 0.3 0.5 0.6 0.8 0.9 1 1.5 2 3 4 4.3 \
-   --test_dataset data/equinix-chicago.dirA.20160121-132900.ports.npy \
+   --space_list 0.2 2 \
+   --test_dataset data/equinix-chicago.dirA.20160121-130700.ports.npy \
    --model paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
    --save_file ip_learned_sketch_optimal_params \
    --save_folder experiments \
-   --n_workers 10 \
+   --n_workers 100 \
    --run_learned_version \
    --run_regular_count_sketch \
   #--run_cutoff_version \
 
-# run validation with optimal test params 
+# find optimal parameters for regular learned experiment with cutoff strategy
 python3 experiments.py \
-   --valid_dataset data/equinix-chicago.dirA.20160121-130700.ports.npy \
+   --space_list 0.2 2 \
+   --test_dataset data/equinix-chicago.dirA.20160121-130700.ports.npy \
    --model paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
-   --optimal_params experiments/ip_learned_sketch_optimal_params.npz \
+   --save_file ip_learned_sketch_optimal_params \
    --save_folder experiments \
-   --save_file ip_learned_sketch_experiment_results \
-   --n_workers 10 \
+   --n_workers 100 \
    --run_learned_version \
    --run_regular_count_sketch \
+  -run_cutoff_version \
+
+# run experiment over the test dataset with optimal params 
+# python3 experiments.py \
+#    --valid_dataset data/equinix-chicago.dirA.20160121-132900.ports.npy \
+#    --model paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
+#    --optimal_params experiments/ip_learned_sketch_optimal_params.npz \
+#    --save_folder experiments \
+#    --save_file ip_learned_sketch_experiment_results \
+#    --n_workers 10 \
+#    --run_learned_version \
+#    --run_regular_count_sketch \
 #  --run_cutoff_version \
+
+
 
 
 # === AOL ===

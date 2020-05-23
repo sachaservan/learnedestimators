@@ -6,7 +6,6 @@ import argparse
 import numpy as np
 
 from halo import Halo
-
 from itertools import repeat
 from multiprocessing import Pool, set_start_method, get_context
 from sketches import count_min, count_sketch
@@ -16,6 +15,10 @@ from learned_sketches import learned_count_sketch_partitions
 from utils import get_data_aol_query_list
 from utils import get_data, get_stat, git_log, feat_to_string, get_data_str_with_ports_list
 
+# constants used in experiments 
+from experiment_constants import *
+
+
 #################################################
 # each algorithm variant used in the experiemnts 
 #################################################
@@ -23,8 +26,28 @@ def run_count_sketch(y, n_hashes, n_buckets, name):
     estimates = count_sketch(y, n_buckets, n_hashes)
     return estimates
 
-def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, name, cutoff): 
-    estimates, loss_per_partition = learned_count_sketch_partitions(y.copy(), y_scores.copy(), space_cs, space_cmin, partitions, cutoff)
+def run_cutoff_count_sketch(y, y_scores, space, name, cutoff_threshold): 
+    y_cutoff = y[cutoff_threshold:] # all items that have a predicted score > cutoff_thresh
+    table_estimates = y[:cutoff_threshold] # store exact counts for all 
+    n_buckets = int(space / COUNT_MIN_OPTIMAL_N_HASH)
+    n_hash = int(space / COUNT_SKETCH_OPTIMAL_N_HASH)
+    sketch_estimates = count_sketch(y_cutoff, n_buckets, n_hash)
+    
+    return np.concatenate((table_estimates, sketch_estimates))
+  
+
+def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, name, cutoff=False, cutoff_threshold=0): 
+
+    if cutoff:
+        y_cutoff = y[cutoff_threshold:] # all items that have a predicted score > cutoff_thresh
+        y_scores_cutoff = y_scores[cutoff_threshold:]
+        table_estimates = y[:cutoff_threshold] # store exact counts for all 
+
+        sketch_estimates, loss_per_partition = learned_count_sketch_partitions(y_cutoff.copy(), y_scores_cutoff.copy(), space_cs, space_cmin, partitions)
+        return np.concatenate((table_estimates, sketch_estimates)), loss_per_partition
+    else:
+        estimates, loss_per_partition = learned_count_sketch_partitions(y.copy(), y_scores.copy(), space_cs, space_cmin, partitions)
+  
     return estimates, loss_per_partition
 
 #################################################
@@ -47,34 +70,41 @@ def compute_partitions(scores, space, n_partitions):
     
     return partitions
 
-def find_best_parameters(test_data, test_oracle_scores, space_list, space_allocations, n_workers, save_folder, save_file):
-    # TODO: make these a constant or parameter somewhere...
-    # space_fractions_to_test = [0.4, 0.45, 0.5, 0.6, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
-    # n_partitions_to_test = [5, 10, 20, 30, 50, 60, 70, 80, 90, 100]
-    space_fractions_to_test = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
-    n_partitions_to_test = [20, 30, 40, 50, 60, 80, 100]
+def find_best_parameters(test_data, test_oracle_scores, space_list, space_allocations, n_workers, save_folder, save_file, cutoff=False):
+    space_fractions_to_test = SPACE_FRAC_TO_TEST
+    n_partitions_to_test = NUM_PARTITIONS_TO_TEST
+    cutoff_frac_to_test = [0]
+    if cutoff:
+        cutoff_frac_to_test = CUTOFF_FRAC_TO_TEST 
 
     # compute partitions for each space allocation 
     best_space_cs = []
     best_space_cmin = []
     best_partitions_for_space = []
+    best_cutoff_thresh_for_space = []
     for i, test_space in enumerate(space_allocations):
         test_space_cs = []
         test_space_cmin = []
+        test_params_cutoff_thresh = []
         test_params_partitions = []
 
         # test all combinations 
         for space_frac in space_fractions_to_test:
             for test_n_partition in n_partitions_to_test:
-                test_space_cs.append(int(test_space * space_frac))
-                test_space_cmin.append(int(test_space * (1.0 - space_frac)))
-                # TODO: fix magic constant 5 here
-                space_for_cs = int(test_space * space_frac / 5.0) # want approx. as many buckets as items so divide by n_hash
-                partitions = compute_partitions(test_oracle_scores, space_for_cs , test_n_partition)
-                test_params_partitions.append(partitions)
+                for test_cutoff_frac in cutoff_frac_to_test:
+                    # combination of parameters to test
+                    cutoff_thresh = int((test_cutoff_frac * test_space) / CUTOFF_SPACE_COST_FACTOR)
+                    test_params_cutoff_thresh.append(cutoff_thresh)
+                    test_space_post_cutoff = int(test_space - cutoff_thresh * CUTOFF_SPACE_COST_FACTOR)
+
+                    test_space_cs.append(int(test_space_post_cutoff * space_frac))
+                    test_space_cmin.append(int(test_space_post_cutoff * (1.0 - space_frac)))
+                    space_for_cs = int(test_space_post_cutoff * space_frac / COUNT_SKETCH_OPTIMAL_N_HASH) # want approx. as many buckets as items so divide by n_hash
+                    partitions = compute_partitions(test_oracle_scores, space_for_cs , test_n_partition)
+                    test_params_partitions.append(partitions)
+                    test_params_cutoff_thresh.append(cutoff_thresh)
 
         print("Learning best parameters for space setting...")
-        
         with get_context("spawn").Pool() as pool:
             results = pool.starmap(
                 run_learned_count_sketch, 
@@ -84,7 +114,8 @@ def find_best_parameters(test_data, test_oracle_scores, space_list, space_alloca
                 test_space_cmin, 
                 test_params_partitions, 
                 repeat('test_param_learned_count_sketch'), 
-                repeat(False)))
+                repeat(cutoff), 
+                test_params_cutoff_thresh))
             pool.close()
             pool.join()
         test_algo_predictions = [x[0] for x in results]
@@ -96,19 +127,23 @@ def find_best_parameters(test_data, test_oracle_scores, space_list, space_alloca
         space_cs = test_space_cs[best_loss_idx]
         space_cmin = test_space_cmin[best_loss_idx]
         partitions = test_params_partitions[best_loss_idx]
+        cutoff_thresh = test_params_cutoff_thresh[best_loss_idx]
         best_space_cs.append(space_cs)
         best_space_cmin.append(space_cmin) # 1-space_frac (use all remaining space)
         best_partitions_for_space.append(partitions)
+        best_cutoff_thresh_for_space.append(cutoff_thresh)
 
-    print("Best space cs:   " + str(best_space_cs))
-    print("Best space cmin: " + str(best_space_cmin))
-    print("Best partitions: " + str([partitions for partitions in best_partitions_for_space]))
+    print("Best space cs:      " + str(best_space_cs))
+    print("Best space cmin:    " + str(best_space_cmin))
+    print("Best partitions:    " + str(partitions))
+    print("Best cutoff thresh: " + str(best_cutoff_thresh_for_space))
 
     np.savez(os.path.join(save_folder, save_file),
         space_list=space_list,
         best_space_cs=best_space_cs,
         best_space_cmin=best_space_cmin,
         best_partitions_for_space=best_partitions_for_space,
+        best_cutoff_thresh_for_space=best_cutoff_thresh_for_space,
         space_allocations=space_allocations)
 
     return best_space_cs, best_space_cmin, best_partitions_for_space
@@ -338,12 +373,15 @@ if __name__ == '__main__':
     if not os.path.exists(folder):
         os.makedirs(folder)
 
+    
+    # TODO: swap test and validation. Currently naming validation data when should be test data and vis versa
+
     if args.test_dataset is not None:
         # load the test dataset
         test_data, test_oracle_scores = load_dataset(
             args.test_dataset, 
             args.model, 
-            'test_output',
+            'valid_output',
             args.aol_data,
             args.synth_data)
         
@@ -355,7 +393,7 @@ if __name__ == '__main__':
         # find the best parameters for the algorithm on the test dataset 
         spinner = Halo(text='Finding optimal parameters', spinner='dots')
         spinner.start()
-        find_best_parameters(test_data, test_oracle_scores, args.space_list, space_alloc, args.n_workers, args.save_folder, args.save_file)
+        find_best_parameters(test_data, test_oracle_scores, args.space_list, space_alloc, args.n_workers, args.save_folder, args.save_file, args.run_cutoff_version)
         spinner.stop()
 
     elif args.valid_dataset is not None:
@@ -363,7 +401,7 @@ if __name__ == '__main__':
         valid_data, valid_oracle_scores = load_dataset(
             args.valid_dataset, 
             args.model, 
-            'valid_output',
+            'test_output',
             args.aol_data,
             args.synth_data)
 
@@ -374,21 +412,39 @@ if __name__ == '__main__':
         best_partitions = np.array(data['best_partitions_for_space'])
         space_allocations = np.array(data['space_allocations'])
 
-        # run the experiment with the specified parameters
-        experiment_comapre_loss_no_cutoff(
-            valid_data, 
-            valid_oracle_scores,
-            space_allocations,
-            best_space_cs,
-            best_space_cmin,
-            best_partitions,
-            args.n_workers, 
-            args.save_folder, 
-            args.save_file, 
-            space_list,
-            run_regular_count_sketch=args.run_regular_count_sketch,
-            run_learned_experiment=args.run_learned_version,
-            run_perfect_oracle_experiment=args.run_perfect_oracle_version)
+        if args.run_cutoff_version:
+            # run the experiment with the specified parameters
+            experiment_comapre_loss_with_cutoff(
+                valid_data, 
+                valid_oracle_scores,
+                space_allocations,
+                best_space_cs,
+                best_space_cmin,
+                best_partitions,
+                args.n_workers, 
+                args.save_folder, 
+                args.save_file, 
+                space_list,
+                run_regular_count_sketch=args.run_regular_count_sketch,
+                run_learned_experiment=args.run_learned_version,
+                run_perfect_oracle_experiment=args.run_perfect_oracle_version)
+        else: 
+            # run the experiment with the specified parameters
+            experiment_comapre_loss_no_cutoff(
+                valid_data, 
+                valid_oracle_scores,
+                space_allocations,
+                best_space_cs,
+                best_space_cmin,
+                best_partitions,
+                args.n_workers, 
+                args.save_folder, 
+                args.save_file, 
+                space_list,
+                run_regular_count_sketch=args.run_regular_count_sketch,
+                run_learned_experiment=args.run_learned_version,
+                run_perfect_oracle_experiment=args.run_perfect_oracle_version)
+
     else:
         print("Error: need either testing or validation dataset")
         
