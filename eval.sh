@@ -1,3 +1,6 @@
+# delete old log file
+rm eval.log 
+
 # === INTERNET TRAFFIC ===
 
 # find optimal parameters for regular learned experiment 

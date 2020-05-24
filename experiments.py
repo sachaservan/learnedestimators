@@ -40,7 +40,7 @@ def run_cutoff_count_sketch(y, y_scores, space, cutoff_threshold):
     y_cutoff = y[cutoff_threshold:] # all items that have a predicted score > cutoff_thresh
     table_estimates = y[:cutoff_threshold] # store exact counts for all 
     n_buckets = int(space / COUNT_MIN_OPTIMAL_N_HASH)
-    n_hash = int(space / COUNT_SKETCH_OPTIMAL_N_HASH)
+    n_hash = COUNT_SKETCH_OPTIMAL_N_HASH
     sketch_estimates = count_sketch(y_cutoff, n_buckets, n_hash)
     
     return np.concatenate((table_estimates, sketch_estimates))
