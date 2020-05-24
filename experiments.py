@@ -43,7 +43,7 @@ def run_cutoff_count_sketch(y, y_scores, space, cutoff_threshold):
     n_hash = COUNT_SKETCH_OPTIMAL_N_HASH
     sketch_estimates = count_sketch(y_cutoff, n_buckets, n_hash)
     
-    return np.concatenate((table_estimates, sketch_estimates)).to_list()
+    return np.concatenate((table_estimates, sketch_estimates)).tolist()
   
 
 def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cutoff=False, cutoff_threshold=0): 
