@@ -101,7 +101,9 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
         part_mean = np.sum(part_items) / n_distinct_elements
 
         # uses N_BYTES_FOR_SECOND_MOMENT_ESTIMATION bytes of memory to compute second moment 
-        part_std = math.sqrt(second_moment_estimate(part_items)/n_distinct_elements - part_mean**2) 
+        variance = second_moment_estimate(part_items)/n_distinct_elements - part_mean**2
+        variance = max(0, variance) # avoid negative variance in estimate...
+        part_std = math.sqrt(variance) 
         cmin_estimates = count_min(part_items, n_buckets_partition_cmin, n_hash_partition_cmin)
 
         expected_collisions = max(1, int(n_distinct_elements / n_buckets_partition_cmin)) # take max to avoid div by zero
