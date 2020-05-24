@@ -434,16 +434,16 @@ if __name__ == '__main__':
         for i, space in enumerate(args.space_list):
             space_alloc[i] = int(space * 1e6 / 4)
 
-        # find the best parameters for the algorithm on the test dataset 
-        spinner = Halo(text='Finding optimal parameters for learned algorithm', spinner='dots')
-        spinner.start()
-        # TODO: do something about the appended file names; ideally have seperate optimal parameter files specified for cs and algo
-        find_best_parameters_for_learned_algo(test_data, test_oracle_scores, args.space_list, space_alloc, args.n_workers, args.save_folder, args.save_file + '_learned', args.run_cutoff_version)
-        spinner.stop()
+        # # find the best parameters for the algorithm on the test dataset 
+        # spinner = Halo(text='Finding optimal parameters for learned algorithm', spinner='dots')
+        # spinner.start()
+        # # TODO: do something about the appended file names; ideally have seperate optimal parameter files specified for cs and algo
+        # find_best_parameters_for_learned_algo(test_data, test_oracle_scores, args.space_list, space_alloc, args.n_workers, args.save_folder, args.save_file + '_learned', args.run_cutoff_version)
+        # spinner.stop()
 
         spinner = Halo(text='Finding optimal parameters for cutoff count sketch', spinner='dots')
         spinner.start()
-        find_best_parameters_for_cutoff(test_data, test_oracle_scores, args.space_list, space_alloc, args.n_workers, args.save_folder,  args.save_file + '_count_sketch', args.run_cutoff_version)
+        find_best_parameters_for_cutoff(test_data, test_oracle_scores, args.space_list, space_alloc, args.n_workers, args.save_folder,  args.save_file + '_count_sketch')
         spinner.stop()
 
     elif args.valid_dataset is not None:
