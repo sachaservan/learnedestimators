@@ -97,7 +97,7 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
         part_scores = scores[start:end]
 
         # uses N_REGISTERS_FOR_HLL bytes (each regiseter is 1 byte) of memory to store distinct elements 
-        n_distinct_elements = hyperloglogsimulate(len(part_items), N_REGISTERS_FOR_HLL)
+        n_distinct_elements = max(1, hyperloglogsimulate(len(part_items), N_REGISTERS_FOR_HLL)) # take max to avoid division by zero
         part_mean = np.sum(part_items) / n_distinct_elements
 
         # uses N_BYTES_FOR_SECOND_MOMENT_ESTIMATION bytes of memory to compute second moment 
