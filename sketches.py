@@ -2,6 +2,11 @@ import random
 import numpy as np
 from sketch_common import random_hash, random_hash_with_sign
 
+# setup logging 
+import logging
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
 
 def count_min(items, n_buckets, n_hash):
     ''' 

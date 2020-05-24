@@ -11,6 +11,9 @@ from sketch_common import hyperloglogsimulate, second_moment_estimate
 # constants used in experiments 
 from experiment_constants import *
 
+# setup logging 
+import logging
+logger = logging.getLogger('learned_estimators_log')
 
 def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partitions):
     '''
@@ -46,9 +49,11 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
     n_buckets_partition_cmin = int(space_cmin / n_hash_partition_cmin / (n_partitions - 1))
     n_buckets_partition_cmin -= int(EXTRA_SPACE_PER_PARTITION_IN_BYTES / (n_hash_partition_cmin * 4)) # space is in units of 4 bytes 
 
-    print("Partition sizes:                       " + str(sizes))
-    print("Partition buckets (count-sketch):      " + str(n_buckets_partition_cs))
-    print("Partition buckets (count-min sketch):  " + str(n_buckets_partition_cmin))
+    logger.info("///////////////////////////////////////////////////////////")
+    logger.info("Partition sizes:                       " + str(sizes))
+    logger.info("Partition buckets (count-sketch):      " + str(n_buckets_partition_cs))
+    logger.info("Partition buckets (count-min sketch):  " + str(n_buckets_partition_cmin))
+    logger.info("///////////////////////////////////////////////////////////")
 
     ####################################
     # SANITY CHECKING
@@ -102,42 +107,42 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
                 item_est[start+j] = cmin_estimates[j] / expected_collisions
 
             # if np.abs(item_est[start+j] - part_items[j]) > 100:         
-            #     print()
-            #     print("partition size       " + str(len(splits[i])))
-            #     print("partition std        " + str(part_std))
-            #     print("partition mean       " + str(part_mean))
-            #     print("sketch_collisions    " + str(sketch_collisions))
-            #     print("estimates            " + str(sketch_estimates))
-            #     print("min (uncorrected)    " + str(np.min(sketch_estimates)))x
-            #     print("min (corrected)      " + str(item_est[start+j]))
-            #     print("actual count:        " + str(part_items[j]))                 
+            #     logger.info()
+            #     logger.info("partition size       " + str(len(splits[i])))
+            #     logger.info("partition std        " + str(part_std))
+            #     logger.info("partition mean       " + str(part_mean))
+            #     logger.info("sketch_collisions    " + str(sketch_collisions))
+            #     logger.info("estimates            " + str(sketch_estimates))
+            #     logger.info("min (uncorrected)    " + str(np.min(sketch_estimates)))x
+            #     logger.info("min (corrected)      " + str(item_est[start+j]))
+            #     logger.info("actual count:        " + str(part_items[j]))                 
 
             # compute loss within the partition
             number_of_items_processed_sanity_check += 1
             loss_per_partition[i] += np.abs(item_est[start+j] - part_items[j])
             sum_indices_sanity_check += start+j
 
-        print("////////////////////////////////////")
-        print("partition size:               " + str(len(part_items)))
-        print("patition size (estimated):    " + str(n_distinct_elements))
-        print("partition mean:               " + str(np.mean(part_items)))
-        print("partition mean (estimated):   " + str(part_mean))
-        print("partition std:                " + str(np.std(part_items)))
-        print("partition std (estimated):    " + str(part_std))
-        print("n_buckets:                    " + str(n_buckets_partition_cmin))
-        print("L1 loss (total):              " + str(loss_per_partition[i]))
-        print("////////////////////////////////////")
+        logger.info("///////////////////////////////////////////////////////////")
+        logger.info("partition size:               " + str(len(part_items)))
+        logger.info("patition size (estimated):    " + str(n_distinct_elements))
+        logger.info("partition mean:               " + str(np.mean(part_items)))
+        logger.info("partition mean (estimated):   " + str(part_mean))
+        logger.info("partition std:                " + str(np.std(part_items)))
+        logger.info("partition std (estimated):    " + str(part_std))
+        logger.info("n_buckets:                    " + str(n_buckets_partition_cmin))
+        logger.info("L1 loss (total):              " + str(loss_per_partition[i]))
+        logger.info("///////////////////////////////////////////////////////////")
 
     # make sure we're not using more buckets than originally allocated to the algorithm
     if space_total_sanity_check > space_cmin + space_cs:
-        print("WARNING: too much used space; are all the parameters correct?")
+        logger.info("WARNING: too much used space; are all the parameters correct?")
     
-    print("////////////////////////////////////")
-    print("Total space used:  " + str(space_total_sanity_check))
-    print("Total loss:        " + str(np.sum(loss_per_partition)))
-    print("# of partitions:   " + str(len(sizes)))
-    print("# items processed: " + str(number_of_items_processed_sanity_check)  + " (" + str(len(items)) + " total items)")
-    print("////////////////////////////////////")
+    logger.info("///////////////////////////////////////////////////////////")
+    logger.info("Total space used:  " + str(space_total_sanity_check))
+    logger.info("Total loss:        " + str(np.sum(loss_per_partition)))
+    logger.info("# of partitions:   " + str(len(sizes)))
+    logger.info("# items processed: " + str(number_of_items_processed_sanity_check)  + " (" + str(len(items)) + " total items)")
+    logger.info("///////////////////////////////////////////////////////////")
 
     return item_est, loss_per_partition
 
