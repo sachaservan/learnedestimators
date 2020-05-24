@@ -107,13 +107,14 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
             pool.close()
             pool.join()
 
-    losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_cutoff_predictions]
-    best_loss_idx = np.argmin(losses)
+        losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_cutoff_predictions]
+        best_loss_idx = np.argmin(losses)
 
-    space_cs = test_space_cs[best_loss_idx]
-    cutoff_thresh = test_params_cutoff_thresh[best_loss_idx]
-    best_space_cs.append(space_cs)
-    best_cutoff_thresh_for_space.append(cutoff_thresh)
+        space_cs = test_space_cs[best_loss_idx]
+        cutoff_thresh = test_params_cutoff_thresh[best_loss_idx]
+        best_space_cs.append(space_cs)
+        best_cutoff_thresh_for_space.append(cutoff_thresh)
+        
     np.savez(os.path.join(save_folder, save_file),
         space_list=space_list,
         best_space_cs=best_space_cs,
@@ -398,7 +399,8 @@ if __name__ == '__main__':
     argparser = argparse.ArgumentParser(sys.argv[0])
     argparser.add_argument("--test_dataset", type=str, nargs='*', help="list of input .npy data for testing")
     argparser.add_argument("--valid_dataset", type=str, nargs='*', help="list of input .npy data for validation")
-    argparser.add_argument("--optimal_params", type=str, help="optimal parameters to run the validation with")
+    argparser.add_argument("--optimal_params", type=str, nargs='*', help="optimal parameters to run the validation with")
+    argparser.add_argument("--optimal_params_cutoff_cs", type=str, help="optimal parameters to run the validation with for cutoff count sketch")
     argparser.add_argument("--model", type=str, nargs='*', help="ml model to use as predictor (.npz file)")
     argparser.add_argument("--count_sketch_results", type=str,  help="results for count sketch .npz file")
     argparser.add_argument("--save_folder", type=str, required=True, help="folder to save the results in")
@@ -406,7 +408,6 @@ if __name__ == '__main__':
     argparser.add_argument("--seed", type=int, default=42, help="random state for sklearn")
     argparser.add_argument("--space_list", type=float, nargs='*', default=[], help="space in MB")
     argparser.add_argument("--n_workers", type=int, default=10, help="number of worker threads",)
-    argparser.add_argument("--use_count_sketch_results_file", action='store_true', default=False)
     argparser.add_argument("--aol_data", action='store_true', default=False)
     argparser.add_argument("--synth_data", action='store_true', default=False)
     argparser.add_argument("--run_cutoff_version", action='store_true', default=False)
@@ -455,12 +456,27 @@ if __name__ == '__main__':
             args.aol_data,
             args.synth_data)
 
-        data = np.load(args.optimal_params)
+        # figure out whether we need to load multiple param files
+        best_cutoff_thresh_count_sketch = []
+        best_cutoff_space_count_sketch = []
+        learned_optimal_params = ''
+        if len(args.optimal_params) > 1:
+            learned_optimal_params = args.optimal_params[0]
+            count_sketch_optimal_params = args.optimal_params[1]
+            data = np.load(count_sketch_optimal_params)
+            best_cutoff_space_count_sketch = np.array(data['best_space_cs'])
+            best_cutoff_thresh_count_sketch = np.array(data['best_cutoff_thresh_for_space'])
+        else:
+            learned_optimal_params = args.optimal_params
+
+
+        data = np.load(learned_optimal_params)
         space_list = np.array(data['space_list'])
         best_space_cs = np.array(data['best_space_cs'])
         best_space_cmin = np.array(data['best_space_cmin'])
         best_partitions = np.array(data['best_partitions_for_space'])
         space_allocations = np.array(data['space_allocations'])
+            
 
         if args.run_cutoff_version:
             # run the experiment with the specified parameters
