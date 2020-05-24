@@ -38,11 +38,17 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
     # sizes contains the number of elements to place into each partition 
     sizes = np.zeros(n_partitions, dtype=int)
     high = np.max(scores)
-    for i in range(n_partitions):
+    for i in range(n_partitions-1):
         low = partitions[i]
         mask = np.where(np.logical_and(scores>low, scores<=high))
         sizes[i] = len(scores[mask])
         high = low
+
+    # last partition gets verything that's left 
+    # there could be a mismatch in test vs. validation preds 
+    # so we just dump everything that's lower than the threshold
+    # frequency into the last partition 
+    sizes[n_partitions-1] = len(scores[scores <= high])
 
     # count min setup 
     n_hash_partition_cmin = COUNT_MIN_OPTIMAL_N_HASH
@@ -102,9 +108,9 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
         for j in range(len(part_items)): 
             # treshold correction based on # collisions         
             if (cmin_estimates[j] - expected_collisions*part_mean) >= part_std:
-                item_est[start+j] = cmin_estimates[j]  - (expected_collisions - 1)*part_mean
+                item_est[start+j] = max(0, cmin_estimates[j]  - (expected_collisions - 1)*part_mean)
             else:
-                item_est[start+j] = cmin_estimates[j] / expected_collisions
+                item_est[start+j] = int(round(cmin_estimates[j] / expected_collisions))
 
             # if np.abs(item_est[start+j] - part_items[j]) > 100:         
             #     logger.info()

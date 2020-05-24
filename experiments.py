@@ -43,7 +43,7 @@ def run_cutoff_count_sketch(y, y_scores, space, cutoff_threshold):
     n_hash = COUNT_SKETCH_OPTIMAL_N_HASH
     sketch_estimates = count_sketch(y_cutoff, n_buckets, n_hash)
     
-    return np.concatenate((table_estimates, sketch_estimates))
+    return np.concatenate((table_estimates, sketch_estimates)).to_list()
   
 
 def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cutoff=False, cutoff_threshold=0): 
@@ -117,8 +117,8 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
         
     np.savez(os.path.join(save_folder, save_file),
         space_list=space_list,
-        best_space_cs=best_space_cs,
-        best_cutoff_thresh_for_space=best_cutoff_thresh_for_space)
+        best_cutoff_space_count_sketch=best_space_cs,
+        best_cutoff_count_sketch_thresh_for_space=best_cutoff_thresh_for_space)
 
     return best_space_cs, best_cutoff_thresh_for_space
 
@@ -201,58 +201,66 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
     return best_space_cs, best_space_cmin, best_partitions_for_space
 
 def experiment_comapre_loss_with_cutoff(
-    test_data,
-    test_oracle_scores,
     valid_data,
     valid_oracle_scores,
     space_alloc,
+    best_space_cs,
+    best_space_cmin,
+    best_partitions,
+    best_cutoff_thresh,
+    best_cutoff_cs_space,
+    best_cutoff_cs_threshold,
     n_workers, 
-    space_list, 
     save_folder, 
     save_file, 
-    run_regular_count_sketch=False,
-    run_learned_experiment=False, 
-    run_perfect_oracle_experiment=False):
-
-    logger.info("not implemented")
-
-    # TODO: 
-    # 1) learn what the best cutoff parameters are for both count-sketch and learned count sketch 
-    # 2) run both 
+    space_list):
 
      # learned algo with cutoff 
-    test_results_learned_cutoff = []
-    # if run_cutoff_experiment:
-    #     logger.info("Running learned count sketch with cutoff")
-    #     # learned algorithm with cutoff 
-    #     pool = Pool(n_workers)
-    #     results = pool.starmap(
-    #         run_learned_count_sketch, zip(repeat(valid_data), repeat(valid_oracle_predictions), 
-    #         space, space_fracs, partitions, repeat(True)))
-    #     pool.close()
-    #     pool.join()
-        
+    valid_cutoff_algo_predictions = []
+    loss_per_partition = []
+    logger.info("Running learned count sketch with cutoff")
+    # learned algorithm with cutoff 
+    with get_context("spawn").Pool() as pool:
+        results = pool.starmap(
+            run_learned_count_sketch, 
+            zip(repeat(valid_data), 
+            repeat(valid_oracle_scores), 
+            best_space_cs, 
+            best_space_cmin, 
+            best_partitions, 
+            repeat(True), 
+            best_cutoff_thresh))
+        pool.close()
+        pool.join()
+    valid_cutoff_algo_predictions = [x[0] for x in results]
+    loss_per_partition = [x[1] for x in results]
 
     # vanilla sketch + cutoff 
-    test_results_just_cutoff = []
-    # if run_cutoff_experiment:
-    #     logger.info("Running vanilla count sketch with cutoff")
-    #     # count sketch algorithm with cutoff 
-    #     pool = Pool(n_workers)
-    #     results = pool.starmap(
-    #         run_learned_count_sketch_just_cutoff, zip(repeat(data), repeat(oracle_predictions), 
-    #         n_hashes, n_buckets)
-    #     pool.close()
-    #     pool.join()
-    #     test_results_just_cutoff = [x[0] for x in results]
+    valid_cutoff_count_sketch_predictions = []
+    n_hashes = np.zeros(len(space_allocations), dtype=int)
+    n_buckets = np.zeros(len(space_allocations), dtype=int)
+    for i, space in enumerate(space_allocations):
+        n_hashes[i] = 5
+        n_buckets[i] = int(space/n_hashes[i])
+
+    logger.info("Running vanilla count sketch")
+    with get_context("spawn").Pool() as pool:
+        valid_cutoff_count_sketch_predictions = pool.starmap(
+            run_cutoff_count_sketch, 
+            zip(repeat(valid_data), repeat(valid_oracle_scores), best_cutoff_cs_space, best_cutoff_cs_threshold))
+        pool.close()
+        pool.join()
+
+
+
     #################################################################
     # save all results to the folder
     #################################################################
-    # np.savez(os.path.join(save_folder, save_file),
-    #     valid_count_sketch_predictions=test_count_sketch_predictions,
-    #     test_count_sketch_predictions_cutoff=test_results_just_cutoff,
-    #     n_hashes=n_hashes,
-    #     space_list=space_list)
+    np.savez(os.path.join(save_folder, save_file),
+        valid_cutoff_count_sketch_predictions=valid_cutoff_count_sketch_predictions,
+        valid_cutoff_algo_predictions=valid_cutoff_algo_predictions,
+        loss_per_partition=loss_per_partition,
+        space_list=space_list)
 
 def experiment_comapre_loss_no_cutoff(
     valid_data,
@@ -264,10 +272,7 @@ def experiment_comapre_loss_no_cutoff(
     n_workers, 
     save_folder, 
     save_file, 
-    space_list,
-    run_regular_count_sketch=False,
-    run_learned_experiment=False, 
-    run_perfect_oracle_experiment=False):
+    space_list):
 
     # sort the data however we need it (here according to predicted scores)
     sort = np.argsort(valid_oracle_scores)[::-1]
@@ -282,37 +287,37 @@ def experiment_comapre_loss_no_cutoff(
     # learned count sketch
     valid_algo_predictions = []
     loss_per_partition = []
-    if run_learned_experiment:
-        spinner = Halo(text='Evaluating learned count sketch', spinner='dots')
-        spinner.start()
+    spinner = Halo(text='Evaluating learned count sketch', spinner='dots')
+    spinner.start()
 
-        with get_context("spawn").Pool() as pool:
-            results = pool.starmap(
-                run_learned_count_sketch, zip(repeat(valid_data), repeat(valid_oracle_predictions), 
-                best_space_cs, best_space_cmin, best_partitions, repeat(False)))
-            pool.close()
-            pool.join()
-      
-        valid_algo_predictions = [x[0] for x in results]
-        loss_per_partition = [x[1] for x in results]
-        spinner.stop()
+    with get_context("spawn").Pool() as pool:
+        results = pool.starmap(
+            run_learned_count_sketch, zip(repeat(valid_data), repeat(valid_oracle_predictions), 
+            best_space_cs, best_space_cmin, best_partitions, repeat(False)))
+        pool.close()
+        pool.join()
+    
+    valid_algo_predictions = [x[0] for x in results]
+    loss_per_partition = [x[1] for x in results]
+    spinner.stop()
 
     # vanilla count sketch
     valid_count_sketch_predictions = []
-    if run_regular_count_sketch:
+    n_hashes = np.zeros(len(space_allocations), dtype=int)
+    n_buckets = np.zeros(len(space_allocations), dtype=int)
+    for i, space in enumerate(space_allocations):
+        n_hashes[i] = 5
+        n_buckets[i] = int(space/n_hashes[i])
 
-        n_hashes = np.zeros(len(space_allocations), dtype=int)
-        n_buckets = np.zeros(len(space_allocations), dtype=int)
-        for i, space in enumerate(space_allocations):
-            n_hashes[i] = 5
-            n_buckets[i] = int(space/n_hashes[i])
-
-        logger.info("Running vanilla count sketch")
-        with get_context("spawn").Pool() as pool:
-            test_count_sketch_predictions = pool.starmap(
-                run_count_sketch, zip(repeat(valid_data), n_hashes, n_buckets))
-            pool.close()
-            pool.join()
+    logger.info("Running regular count sketch")
+    spinner = Halo(text='Evaluating regular count sketch', spinner='dots')
+    spinner.start()
+    with get_context("spawn").Pool() as pool:
+        test_count_sketch_predictions = pool.starmap(
+            run_count_sketch, zip(repeat(valid_data), n_hashes, n_buckets))
+        pool.close()
+        pool.join()
+    spinner.stop()
 
     #################################################################
     # save all results to the folder
@@ -411,9 +416,7 @@ if __name__ == '__main__':
     argparser.add_argument("--aol_data", action='store_true', default=False)
     argparser.add_argument("--synth_data", action='store_true', default=False)
     argparser.add_argument("--run_cutoff_version", action='store_true', default=False)
-    argparser.add_argument("--run_learned_version", action='store_true', default=False)
     argparser.add_argument("--run_perfect_oracle_version", action='store_true', default=False)
-    argparser.add_argument("--run_regular_count_sketch", action='store_true', default=False)
     args = argparser.parse_args()
 
     # set the random seed for numpy values
@@ -464,10 +467,10 @@ if __name__ == '__main__':
             learned_optimal_params = args.optimal_params[0]
             count_sketch_optimal_params = args.optimal_params[1]
             data = np.load(count_sketch_optimal_params)
-            best_cutoff_space_count_sketch = np.array(data['best_space_cs'])
-            best_cutoff_thresh_count_sketch = np.array(data['best_cutoff_thresh_for_space'])
+            best_cutoff_space_count_sketch = np.array(data['best_space_count_sketch'])
+            best_cutoff_thresh_count_sketch = np.array(data['best_cutoff_count_sketch_thresh_for_space'])
         else:
-            learned_optimal_params = args.optimal_params
+            learned_optimal_params = args.optimal_params[0]
 
 
         data = np.load(learned_optimal_params)
@@ -475,8 +478,8 @@ if __name__ == '__main__':
         best_space_cs = np.array(data['best_space_cs'])
         best_space_cmin = np.array(data['best_space_cmin'])
         best_partitions = np.array(data['best_partitions_for_space'])
+        best_cutoff_treshold_algo = np.array(data['best_cutoff_thresh_for_space'])
         space_allocations = np.array(data['space_allocations'])
-            
 
         if args.run_cutoff_version:
             # run the experiment with the specified parameters
@@ -487,13 +490,13 @@ if __name__ == '__main__':
                 best_space_cs,
                 best_space_cmin,
                 best_partitions,
+                best_cutoff_treshold_algo,
+                best_cutoff_space_count_sketch,
+                best_cutoff_thresh_count_sketch,
                 args.n_workers, 
                 args.save_folder, 
                 args.save_file, 
-                space_list,
-                run_regular_count_sketch=args.run_regular_count_sketch,
-                run_learned_experiment=args.run_learned_version,
-                run_perfect_oracle_experiment=args.run_perfect_oracle_version)
+                space_list)
         else: 
             # run the experiment with the specified parameters
             experiment_comapre_loss_no_cutoff(
@@ -506,10 +509,7 @@ if __name__ == '__main__':
                 args.n_workers, 
                 args.save_folder, 
                 args.save_file, 
-                space_list,
-                run_regular_count_sketch=args.run_regular_count_sketch,
-                run_learned_experiment=args.run_learned_version,
-                run_perfect_oracle_experiment=args.run_perfect_oracle_version)
+                space_list)
 
     else:
         logger.info("Error: need either testing or validation dataset")
