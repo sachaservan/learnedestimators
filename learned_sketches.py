@@ -104,7 +104,7 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
         part_std = math.sqrt(second_moment_estimate(part_items)/n_distinct_elements - part_mean**2) 
         cmin_estimates = count_min(part_items, n_buckets_partition_cmin, n_hash_partition_cmin)
 
-        expected_collisions = int(n_distinct_elements / n_buckets_partition_cmin)
+        expected_collisions = max(1, int(n_distinct_elements / n_buckets_partition_cmin)) # take max to avoid div by zero
 
         # compute estimates for this partition
         for j in range(len(part_items)): 
