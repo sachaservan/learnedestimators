@@ -61,14 +61,14 @@ def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cuto
     return estimates, loss_per_partition
 
 #################################################
-def compute_partitions(scores, space, n_partitions):
+def compute_partitions(scores, space_for_cs, n_partitions):
     splits = np.array_split(scores, n_partitions)
     sizes = [len(splits[k]) for k in range(n_partitions)]
 
     n_partitions_cs = 1
     n_items = sizes[0]
     for i in range(len(sizes)):
-        if n_items < space:
+        if n_items < space_for_cs:
             n_partitions_cs += 1
             n_items += sizes[i]
         else:
@@ -151,7 +151,7 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
 
                     test_space_cs.append(int(test_space_post_cutoff * space_frac))
                     test_space_cmin.append(int(test_space_post_cutoff * (1.0 - space_frac)))
-                    space_for_cs = int(test_space_post_cutoff * space_frac / COUNT_SKETCH_OPTIMAL_N_HASH) # want approx. as many buckets as items so divide by n_hash
+                    space_for_cs = int(test_space_post_cutoff * space_frac / 3.0) # TODO: figure out this constant; put in experiment_constants.py?
                     partitions = compute_partitions(test_oracle_scores, space_for_cs , test_n_partition)
                     test_params_partitions.append(partitions)
                     test_params_cutoff_thresh.append(cutoff_thresh)

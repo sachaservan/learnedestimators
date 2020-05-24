@@ -87,12 +87,14 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
     # run count-min on all other partitions 
     #################################################
     for i in range(1, n_partitions):
+        if sizes[i] == 0:
+            space_total_sanity_check += n_buckets_partition_cmin*n_hash_partition_cmin
+            continue
+
         start = end
         end = start + sizes[i]
         part_items = items[start:end]
         part_scores = scores[start:end]
-
-        space_total_sanity_check += n_buckets_partition_cmin*n_hash_partition_cmin
 
         # uses N_REGISTERS_FOR_HLL bytes (each regiseter is 1 byte) of memory to store distinct elements 
         n_distinct_elements = hyperloglogsimulate(len(part_items), N_REGISTERS_FOR_HLL)
