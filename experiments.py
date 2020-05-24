@@ -445,10 +445,11 @@ if __name__ == '__main__':
         find_best_parameters_for_learned_algo(test_data, test_oracle_scores, args.space_list, space_alloc, args.n_workers, args.save_folder, args.save_file + '_learned', args.run_cutoff_version)
         spinner.stop()
 
-        spinner = Halo(text='Finding optimal parameters for cutoff count sketch', spinner='dots')
-        spinner.start()
-        find_best_parameters_for_cutoff(test_data, test_oracle_scores, args.space_list, space_alloc, args.n_workers, args.save_folder,  args.save_file + '_count_sketch')
-        spinner.stop()
+        if args.run_cutoff_version:
+            spinner = Halo(text='Finding optimal parameters for cutoff count sketch', spinner='dots')
+            spinner.start()
+            find_best_parameters_for_cutoff(test_data, test_oracle_scores, args.space_list, space_alloc, args.n_workers, args.save_folder,  args.save_file + '_count_sketch')
+            spinner.stop()
 
     elif args.valid_dataset is not None:
         # load the test dataset
