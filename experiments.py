@@ -41,7 +41,7 @@ def run_cutoff_count_sketch(y, y_scores, space, cutoff_threshold):
     table_estimates = y[:cutoff_threshold] # store exact counts for all 
     n_buckets = int(space / COUNT_MIN_OPTIMAL_N_HASH)
     n_hash = COUNT_SKETCH_OPTIMAL_N_HASH
-    sketch_estimates = count_sketch(y_cutoff, n_buckets, n_hash)
+    sketch_estimates = count_sketch(y_cutoff.copy(), n_buckets, n_hash)
     
     return np.concatenate((table_estimates, sketch_estimates)).tolist()
   
@@ -54,7 +54,7 @@ def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cuto
         table_estimates = y[:cutoff_threshold] # store exact counts for all 
 
         sketch_estimates, loss_per_partition = learned_count_sketch_partitions(y_cutoff.copy(), y_scores_cutoff.copy(), space_cs, space_cmin, partitions)
-        return np.concatenate((table_estimates, sketch_estimates)), loss_per_partition
+        return np.concatenate((table_estimates, sketch_estimates)).tolist(), loss_per_partition
     else:
         estimates, loss_per_partition = learned_count_sketch_partitions(y.copy(), y_scores.copy(), space_cs, space_cmin, partitions)
   
@@ -93,7 +93,7 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
             # combination of parameters to test
             cutoff_thresh = int((test_cutoff_frac * test_space) / CUTOFF_SPACE_COST_FACTOR)
             test_params_cutoff_thresh.append(cutoff_thresh)
-            test_space_post_cutoff = int(test_space - cutoff_thresh * CUTOFF_SPACE_COST_FACTOR)
+            test_space_post_cutoff = int(test_space - test_cutoff_frac * cutoff_thresh)
             test_space_cs.append(int(test_space_post_cutoff))
 
         logger.info("Learning best parameters for space setting...")
@@ -436,7 +436,7 @@ if __name__ == '__main__':
         # testing parameters 
         space_alloc = np.zeros(len(args.space_list))
         for i, space in enumerate(args.space_list):
-            space_alloc[i] = int(space * 1e6 / 4)
+            space_alloc[i] = int(space * 1e6 / 4.0) # 4 bytes per bucket
 
         # find the best parameters for the algorithm on the test dataset 
         spinner = Halo(text='Finding optimal parameters for learned algorithm', spinner='dots')
@@ -467,7 +467,7 @@ if __name__ == '__main__':
             learned_optimal_params = args.optimal_params[0]
             count_sketch_optimal_params = args.optimal_params[1]
             data = np.load(count_sketch_optimal_params)
-            best_cutoff_space_count_sketch = np.array(data['best_space_count_sketch'])
+            best_cutoff_space_count_sketch = np.array(data['best_cutoff_space_count_sketch'])
             best_cutoff_thresh_count_sketch = np.array(data['best_cutoff_count_sketch_thresh_for_space'])
         else:
             learned_optimal_params = args.optimal_params[0]

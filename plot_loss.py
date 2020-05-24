@@ -72,18 +72,18 @@ if __name__ == '__main__':
     count_sketch_predictions = np.array(results_regular['valid_count_sketch_predictions'])
 
     results_cutoff = np.load(args.results_cutoff,  allow_pickle=True)
-    cutoff_algo_predictions = np.array(results_cutoff['valid_cutoff_algo_predictions']),
-    cutoff_count_sketch_predictions = np.array(results_cutoff['valid_cutoff_count_sketch_predictions']),
+    cutoff_algo_predictions = np.array(results_cutoff['valid_cutoff_algo_predictions'])
+    cutoff_count_sketch_predictions = np.array(results_cutoff['valid_cutoff_count_sketch_predictions'])
 
     total = len(true_counts)
     
     space_percent = [math.ceil(x) for x in (space*1e8) / ((len(true_counts)-1) * 4)]
 
     for i in range(len(loss_functions)):
-        loss_sketch_i = []
-        loss_learned_i =  []
-        loss_just_cutoff_i =  []
-        loss_learned_cutoff_i =  []
+        loss_sketch = []
+        loss_learned =  []
+        loss_just_cutoff =  []
+        loss_learned_cutoff =  []
         #loss_learned_perfect_oracle_i = []
 
         for j in range(len(space)):
@@ -99,23 +99,24 @@ if __name__ == '__main__':
                 loss_for_space_cutoff_algo = loss_functions[i](loss_for_space_cutoff_algo, true_counts[k], cutoff_algo_predictions[j][k])
                 loss_for_space_cutoff_count_sketch = loss_functions[i](loss_for_space_cutoff_count_sketch, true_counts[k], cutoff_count_sketch_predictions[j][k])
 
-            loss_learned_i.append(loss_for_space_algo)
-            loss_sketch_i.append(loss_for_space_sketch)
+            loss_learned.append(loss_for_space_algo)
+            loss_sketch.append(loss_for_space_sketch)
+            loss_learned_cutoff.append(loss_for_space_cutoff_algo)
+            loss_just_cutoff.append(loss_for_space_cutoff_count_sketch)
 
-
-        loss_sketch_i = np.array(loss_sketch_i) / total
-        loss_learned_i = np.array(loss_learned_i) / total
-        loss_just_cutoff_i = np.array(loss_just_cutoff_i) / total
-        loss_learned_cutoff_i = np.array(loss_learned_cutoff_i) / total
+        loss_sketch = np.array(loss_sketch) / total
+        loss_learned = np.array(loss_learned) / total
+        loss_just_cutoff = np.array(loss_just_cutoff) / total
+        loss_learned_cutoff = np.array(loss_learned_cutoff) / total
         #loss_learned_perfect_oracle_i = np.array(loss_learned_perfect_oracle_i) / total
 
 
         ax = plt.figure().gca()
 
-        ax.plot(space_percent, loss_sketch_i, label="Count Sketch", linewidth=3, color=colors[0], zorder=5)
-        ax.plot(space_percent, loss_learned_i, label=args.algo, linewidth=3, color=colors[1], zorder=6)
-        ax.plot(space, loss_just_cutoff_i, label="count sketch (+ cutoff)", linestyle='dashdot', color=colors[3])
-        ax.plot(space, loss_learned_cutoff_i, label=args.algo + " (+ cutoff)", linestyle='dashdot', color=colors[2])
+        ax.plot(space_percent, loss_sketch, label="Count Sketch", linewidth=3, color=colors[0], zorder=5)
+        ax.plot(space_percent, loss_learned, label=args.algo, linewidth=3, color=colors[1], zorder=6)
+        ax.plot(space_percent, loss_just_cutoff, label="Cutoff Count Sketch", linestyle='dashdot', color=colors[3])
+        ax.plot(space_percent, loss_learned_cutoff, label="Cutoff " + args.algo , linestyle='dashdot', color=colors[2])
         # ax.plot(space, loss_learned_perfect_oracle_i, label=args.algo + " (perfect oracle)", linestyle='dotted', color=colors[4])
 
         ax.yaxis.grid(color=gridcolor, linestyle=linestyle)

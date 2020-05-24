@@ -30,7 +30,7 @@ python3 experiments.py \
    --optimal_params experiments/ip_optimal_params_learned.npz \
    --save_folder experiments \
    --save_file ip_learned_sketch_experiment_results \
-   --n_workers 10 \
+   --n_workers 100 \
 
 
 # CUTOFF run experiment over the test dataset with optimal params 
@@ -40,7 +40,7 @@ python3 experiments.py \
    --optimal_params experiments/ip_optimal_params_with_cutoff_learned.npz experiments/ip_optimal_params_with_cutoff_count_sketch.npz\
    --save_folder experiments \
    --save_file ip_learned_sketch_with_cutoff_experiment_results \
-   --n_workers 10 \
+   --n_workers 100 \
    --run_cutoff_version \
 
 
