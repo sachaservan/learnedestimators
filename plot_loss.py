@@ -6,19 +6,16 @@ import matplotlib
 import matplotlib.pyplot as plt
 import pandas as pd
 import math 
+
+
 ###########################
-
-
 # PLOT PARAMETERS
 ###########################
 font = {'family': 'sans-serif',
         'sans-serif': ['Tahoma', 'DejaVu Sans', ' Lucida Grande', 'Verdana'],
         'size': 14}
-
 matplotlib.rc('font', **font)
-
 colors = ["#003f5c", "#ff6361", "#58508d", "#0091d4", "#D7005C"]
-
 
 # more colors:
 # https://www.color-hex.com/color-palettes/
@@ -26,7 +23,11 @@ edgecolor = '#34495e'
 gridcolor = '#2f3640'
 linestyle = 'dotted'
 opacity = 1
+###########################
 
+###########################
+# loss functions to compute 
+###########################
 
 def loss_weighted(loss, y_true, y_est):
     return loss + np.abs(y_true - y_est) * y_true
@@ -40,8 +41,8 @@ def loss_l2(loss, y_true, y_est):
 # order of functions and labels must match
 loss_functions = [loss_l1, loss_l2, loss_weighted]
 loss_labels = ["Average Loss per item (L1)", "Average Loss (L2)", "Average Loss (Weighted)"]
+###########################
 
-skip = 0 # number of values to skip
 
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(sys.argv[0])
@@ -56,7 +57,6 @@ if __name__ == '__main__':
     argparser.add_argument("--max_space", type=float, default=4.0)
     args = argparser.parse_args()
     
-  
     save_file_names = ["experiments/loss_l1_ip.pdf", "experiments/loss_l2_ip.pdf", "experiments/loss_weighted_ip.pdf", "experiments/selection_ip.pdf"]
     if args.aol:
         save_file_names = ["experiments/loss_l1_aol.pdf", "experiments/loss_l2_aol.pdf", "experiments/loss_weighted_aol.pdf", "experiments/selection_aol.pdf"]
@@ -64,20 +64,27 @@ if __name__ == '__main__':
         save_file_names = ["experiments/loss_l1_synth.pdf", "experiments/loss_l2_synth.pdf", "experiments/loss_weighted_synth.pdf", "experiments/selection_synth.pdf"]
        
     results_regular = np.load(args.results_learned,  allow_pickle=True)
-
     space = np.array(results_regular['space_list'])
     true_counts = np.array(results_regular['true_values'])
     pred_counts = np.array(results_regular['oracle_predictions'])
     algo_predictions = np.array(results_regular['valid_algo_predictions'])
     count_sketch_predictions = np.array(results_regular['valid_count_sketch_predictions'])
-
-    results_cutoff = np.load(args.results_cutoff,  allow_pickle=True)
-    cutoff_algo_predictions = np.array(results_cutoff['valid_cutoff_algo_predictions'])
-    cutoff_count_sketch_predictions = np.array(results_cutoff['valid_cutoff_count_sketch_predictions'])
+    
+    if args.results_cutoff:
+        results_cutoff = np.load(args.results_cutoff,  allow_pickle=True)
+        cutoff_algo_predictions = np.array(results_cutoff['valid_cutoff_algo_predictions'])
+        cutoff_count_sketch_predictions = np.array(results_cutoff['valid_cutoff_count_sketch_predictions'])
+    else:
+        cutoff_algo_predictions = algo_predictions
+        cutoff_count_sketch_predictions = count_sketch_predictions
 
     total = len(true_counts)
     
     space_percent = [math.ceil(x) for x in (space*1e8) / ((len(true_counts)-1) * 4)]
+    
+     # TODO: hack for corrupt data 
+    space_percent = np.delete(space_percent, len(space_percent) - 4)
+    space_percent = np.delete(space_percent, len(space_percent) - 2)
 
     for i in range(len(loss_functions)):
         loss_sketch = []
@@ -91,9 +98,12 @@ if __name__ == '__main__':
             loss_for_space_sketch = 0
             loss_for_space_cutoff_algo = 0
             loss_for_space_cutoff_count_sketch = 0
-            
 
-            for k in range(skip, len(true_counts)):
+            # TODO: hack for corrupt data 
+            if j == len(space) - 4 or j == len(space) - 2:
+                continue
+
+            for k in range(len(true_counts)):
                 loss_for_space_algo = loss_functions[i](loss_for_space_algo, true_counts[k], algo_predictions[j][k])
                 loss_for_space_sketch = loss_functions[i](loss_for_space_sketch, true_counts[k], count_sketch_predictions[j][k])
                 loss_for_space_cutoff_algo = loss_functions[i](loss_for_space_cutoff_algo, true_counts[k], cutoff_algo_predictions[j][k])
@@ -115,14 +125,15 @@ if __name__ == '__main__':
 
         ax.plot(space_percent, loss_sketch, label="Count Sketch", linewidth=3, color=colors[0], zorder=5)
         ax.plot(space_percent, loss_learned, label=args.algo, linewidth=3, color=colors[1], zorder=6)
-        ax.plot(space_percent, loss_just_cutoff, label="Cutoff Count Sketch", linestyle='dashdot', color=colors[3])
-        ax.plot(space_percent, loss_learned_cutoff, label="Cutoff " + args.algo , linestyle='dashdot', color=colors[2])
+       # ax.plot(space_percent, loss_just_cutoff, label="Cutoff Count Sketch", linestyle='dashdot', color=colors[3])
+        #ax.plot(space_percent, loss_learned_cutoff, label="Cutoff " + args.algo , linestyle='dashdot', color=colors[2])
         # ax.plot(space, loss_learned_perfect_oracle_i, label=args.algo + " (perfect oracle)", linestyle='dotted', color=colors[4])
+
 
         ax.yaxis.grid(color=gridcolor, linestyle=linestyle)
         ax.xaxis.grid(color=gridcolor, linestyle=linestyle)
         ax.set_axisbelow(True)
-        ax.set_yscale('log', basey=2)
+        ax.set_yscale('log', basey=10)
         ax.set_ylabel(loss_labels[i])
         ax.set_xlabel('Percent space')
 
