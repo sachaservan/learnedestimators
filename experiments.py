@@ -80,6 +80,9 @@ def compute_partitions(scores, num_items_for_cs, n_partitions):
     return partitions
 
 def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, space_allocations, n_workers, save_folder, save_file):
+    spinner = Halo(text='Finding optimal parameters for cutoff count sketch', spinner='dots')
+    spinner.start()
+
     cutoff_frac_to_test = CUTOFF_FRAC_TO_TEST
     best_space_cs = []
     best_cutoff_thresh_for_space = []
@@ -111,11 +114,13 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
         # losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_algo_predictions]
         best_loss_idx = np.argmin(losses)
 
+        spinner.info("Found optimal params for " + str(test_space/1e6) + "MB")
         space_cs = test_space_cs[best_loss_idx]
         cutoff_thresh = test_params_cutoff_thresh[best_loss_idx]
         best_space_cs.append(space_cs)
         best_cutoff_thresh_for_space.append(cutoff_thresh)
         
+    spinner.stop()
     np.savez(os.path.join(save_folder, save_file),
         space_list=space_list,
         best_cutoff_space_count_sketch=best_space_cs,
@@ -129,6 +134,12 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
     cutoff_frac_to_test = [0] # no cutoff 
     if cutoff:
         cutoff_frac_to_test = CUTOFF_FRAC_TO_TEST 
+  
+    if args.run_cutoff_version:
+        spinner = Halo(text='Finding optimal parameters for learned algorithm with cutoff', spinner='dots')
+    else:
+        spinner = Halo(text='Finding optimal parameters for learned algorithm', spinner='dots')
+    spinner.start()
 
     # compute partitions for each space allocation 
     best_space_cs = []
@@ -188,13 +199,15 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
         best_partitions_for_space.append(partitions)
         best_cutoff_thresh_for_space.append(cutoff_thresh)
 
-    logger.info("All L2 losses       " + str(losses))
-    logger.info("Best L2 loss        " + str(losses[best_loss_idx]))
-    logger.info("Best space cs:      " + str(best_space_cs))
-    logger.info("Best space cmin:    " + str(best_space_cmin))
-    logger.info("Best partitions:    " + str(partitions))
-    logger.info("Best cutoff thresh: " + str(best_cutoff_thresh_for_space))
+        spinner.info("Found optimal params for " + str(test_space/1e6) + "MB")
+        logger.info("All L2 losses       " + str(losses))
+        logger.info("Best L2 loss        " + str(losses[best_loss_idx]))
+        logger.info("Best space cs:      " + str(best_space_cs))
+        logger.info("Best space cmin:    " + str(best_space_cmin))
+        logger.info("Best partitions:    " + str(partitions))
+        logger.info("Best cutoff thresh: " + str(best_cutoff_thresh_for_space))
 
+    spinner.stop()
     np.savez(os.path.join(save_folder, save_file),
         space_list=space_list,
         best_space_cs=best_space_cs,
@@ -444,21 +457,11 @@ if __name__ == '__main__':
             space_alloc[i] = int(space * 1e6 / 4.0) # 4 bytes per bucket
 
         # find the best parameters for the algorithm on the test dataset 
-        if args.run_cutoff_version:
-            spinner = Halo(text='Finding optimal parameters for learned algorithm with cutoff', spinner='dots')
-        else:
-            spinner = Halo(text='Finding optimal parameters for learned algorithm', spinner='dots')
-
-        spinner.start()
         # TODO: do something about the appended file names; ideally have seperate optimal parameter files specified for cs and algo
         find_best_parameters_for_learned_algo(test_data, test_oracle_scores, args.space_list, space_alloc, args.n_workers, args.save_folder, args.save_file + '_learned', args.run_cutoff_version)
-        spinner.stop()
 
         if args.run_cutoff_version:
-            spinner = Halo(text='Finding optimal parameters for cutoff count sketch', spinner='dots')
-            spinner.start()
             find_best_parameters_for_cutoff(test_data, test_oracle_scores, args.space_list, space_alloc, args.n_workers, args.save_folder,  args.save_file + '_count_sketch')
-            spinner.stop()
 
     elif args.valid_dataset is not None:
         # load the test dataset
