@@ -169,6 +169,7 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
                     test_params_partitions.append(partitions)
                     test_params_cutoff_thresh.append(cutoff_thresh)
 
+        spinner.info("Running " + str(len(test_space_cs)) + " different parameter combinations...")
         logger.info("Learning best parameters for space setting...")
         with get_context("spawn").Pool() as pool:
             results = pool.starmap(
