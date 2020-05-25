@@ -43,7 +43,7 @@ def run_cutoff_count_sketch(y, y_scores, space, cutoff_threshold):
     n_hash = COUNT_SKETCH_OPTIMAL_N_HASH
     sketch_estimates = count_sketch(y_cutoff.copy(), n_buckets, n_hash)
     
-    return np.concatenate((table_estimates, sketch_estimates)).tolist()
+    return np.concatenate((table_estimates, sketch_estimates),  axis=0).tolist()
   
 
 def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cutoff=False): 
@@ -54,9 +54,8 @@ def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cuto
         y_cutoff = y[cutoff_threshold:] # all items that have a predicted score > cutoff_thresh
         y_scores_cutoff = y_scores[cutoff_threshold:]
         table_estimates = y[:cutoff_threshold] # store exact counts for all 
-
         sketch_estimates, loss_per_partition = learned_count_sketch_partitions(y_cutoff.copy(), y_scores_cutoff.copy(), 0, space_cmin, partitions)
-        return np.concatenate((table_estimates, sketch_estimates)).tolist(), loss_per_partition
+        return np.concatenate((table_estimates, sketch_estimates),  axis=0).tolist(), loss_per_partition
     else:
         estimates, loss_per_partition = learned_count_sketch_partitions(y.copy(), y_scores.copy(), space_cs, space_cmin, partitions)
         return estimates, loss_per_partition
@@ -97,7 +96,7 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
             # combination of parameters to test
             cutoff_thresh = int((test_cutoff_frac * test_space) / CUTOFF_SPACE_COST_FACTOR)
             test_params_cutoff_thresh.append(cutoff_thresh)
-            test_space_post_cutoff = int(test_space - test_cutoff_frac * cutoff_thresh)
+            test_space_post_cutoff = int(test_space - test_space*test_cutoff_frac)
             test_space_cs.append(int(test_space_post_cutoff))
 
         logger.info("Learning best parameters for space setting...")
@@ -160,8 +159,15 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
                 test_space_cs.append(int(test_space * space_frac))
                 test_space_cmin.append(int(test_space * (1.0 - space_frac)))
                 # TODO: figure out this constant; put in experiment_constants.py? 1.5 b/c otherwise worth storing in cutoff table
-                num_items_for_cs = int(test_space * space_frac)  
-                partitions = compute_partitions(test_oracle_scores, num_items_for_cs , test_n_partition)
+                num_items_for_cs = int(test_space * space_frac) 
+
+                if args.run_cutoff_version: 
+                    # in cutoff; want all data to be evenly distributed 
+                    cutoff_thresh = int(test_space_cs / 2)
+                    partitions = compute_partitions(test_oracle_scores[cutoff_thresh:], 0 , test_n_partition)
+                    partitions = np.concatenate(([sys.maxsize], partitions), axis=0)
+                else:
+                    partitions = compute_partitions(test_oracle_scores, num_items_for_cs , test_n_partition)
                 test_params_partitions.append(partitions)
 
        
@@ -224,7 +230,6 @@ def experiment_comapre_loss_with_cutoff(
     best_space_cs,
     best_space_cmin,
     best_partitions,
-    best_cutoff_thresh,
     best_cutoff_cs_space,
     best_cutoff_cs_threshold,
     n_workers, 
@@ -245,8 +250,7 @@ def experiment_comapre_loss_with_cutoff(
             best_space_cs, 
             best_space_cmin, 
             best_partitions, 
-            repeat(True), 
-            best_cutoff_thresh))
+            repeat(True)))
         pool.close()
         pool.join()
     valid_cutoff_algo_predictions = [x[0] for x in results]
@@ -490,7 +494,6 @@ if __name__ == '__main__':
         best_space_cs = np.array(data['best_space_cs'])
         best_space_cmin = np.array(data['best_space_cmin'])
         best_partitions = np.array(data['best_partitions_for_space'])
-        best_cutoff_treshold_algo = np.array(data['best_cutoff_thresh_for_space'])
         space_allocations = np.array(data['space_allocations'])
 
         if args.run_cutoff_version:
@@ -502,7 +505,6 @@ if __name__ == '__main__':
                 best_space_cs,
                 best_space_cmin,
                 best_partitions,
-                best_cutoff_treshold_algo,
                 best_cutoff_space_count_sketch,
                 best_cutoff_thresh_count_sketch,
                 args.n_workers, 

@@ -74,7 +74,6 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
     #################################################
     # run count sketch on the first partition 
     #################################################
-    start_partition = 1
     if space_cs > 0:
         part_items = items[start:end]
         item_est_cs = count_sketch(part_items, n_buckets_partition_cs, n_hash_partition_cs)
@@ -83,13 +82,11 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
             loss_per_partition[0] += np.abs(items[i] - item_est[i])
             number_of_items_processed_sanity_check += 1
         space_total_sanity_check += n_buckets_partition_cs * n_hash_partition_cs
-    else:
-        start_partition = 0
 
     #################################################
     # run count-min on all other partitions 
     #################################################
-    for i in range(start_partition, n_partitions):
+    for i in range(1, n_partitions):
         if sizes[i] == 0:
             space_total_sanity_check += n_buckets_partition_cmin*n_hash_partition_cmin
             continue
