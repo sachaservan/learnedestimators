@@ -34,6 +34,11 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
     ######################################################
     n_partitions = len(partitions)
     loss_per_partition = np.zeros(n_partitions)
+    
+    if n_partitions <= 1:
+        return item_est, loss_per_partition 
+        # TODO: there is a bug where only 1 partition gets allocated. Needs to be fixed...
+        # this is only a temparary fix...
 
     # sizes contains the number of elements to place into each partition 
     sizes = np.zeros(n_partitions, dtype=int)
