@@ -106,7 +106,9 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
             pool.close()
             pool.join()
 
-        losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_cutoff_predictions]
+        # optimize for weighted loss 
+        losses = [np.sum(np.abs(test_data - predictions)*test_data) for predictions in test_algo_predictions]
+        # losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_algo_predictions]
         best_loss_idx = np.argmin(losses)
 
         space_cs = test_space_cs[best_loss_idx]
@@ -171,7 +173,10 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
             pool.join()
 
         test_algo_predictions = [x[0] for x in results]
-        losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_algo_predictions]
+
+        # optimize for weighted loss 
+        losses = [np.sum(np.abs(test_data - predictions)*test_data) for predictions in test_algo_predictions]
+        # losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_algo_predictions]
         best_loss_idx = np.argmin(losses)
       
         space_cs = test_space_cs[best_loss_idx]
