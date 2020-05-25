@@ -8,7 +8,7 @@ Constants.py
 # CUTOFF_FRAC_TO_TEST = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
 SPACE_FRAC_TO_TEST = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9] # space fraction allocated to count-sketch
 NUM_PARTITIONS_TO_TEST = [5, 20, 40, 50, 60]
-CUTOFF_FRAC_TO_TEST = [0.001, 0.005, 0.01, 0.05, 0.1]
+CUTOFF_FRAC_TO_TEST = SPACE_FRAC_TO_TEST # same deal 
 
 COUNT_SKETCH_OPTIMAL_N_HASH = 5
 COUNT_MIN_OPTIMAL_N_HASH = 2

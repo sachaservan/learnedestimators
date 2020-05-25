@@ -46,14 +46,16 @@ def run_cutoff_count_sketch(y, y_scores, space, cutoff_threshold):
     return np.concatenate((table_estimates, sketch_estimates)).tolist()
   
 
-def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cutoff=False, cutoff_threshold=0): 
+def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cutoff=False): 
 
     if cutoff:
+        # use all of space_cs for the cutoff table
+        cutoff_threshold = int(space_cs / 2.0)
         y_cutoff = y[cutoff_threshold:] # all items that have a predicted score > cutoff_thresh
         y_scores_cutoff = y_scores[cutoff_threshold:]
         table_estimates = y[:cutoff_threshold] # store exact counts for all 
 
-        sketch_estimates, loss_per_partition = learned_count_sketch_partitions(y_cutoff.copy(), y_scores_cutoff.copy(), space_cs, space_cmin, partitions)
+        sketch_estimates, loss_per_partition = learned_count_sketch_partitions(y_cutoff.copy(), y_scores_cutoff.copy(), 0, space_cmin, partitions)
         return np.concatenate((table_estimates, sketch_estimates)).tolist(), loss_per_partition
     else:
         estimates, loss_per_partition = learned_count_sketch_partitions(y.copy(), y_scores.copy(), space_cs, space_cmin, partitions)
@@ -134,10 +136,7 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
 def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_list, space_allocations, n_workers, save_folder, save_file, cutoff=False):
     space_fractions_to_test = SPACE_FRAC_TO_TEST
     n_partitions_to_test = NUM_PARTITIONS_TO_TEST
-    cutoff_frac_to_test = [0] # no cutoff 
-    if cutoff:
-        cutoff_frac_to_test = CUTOFF_FRAC_TO_TEST 
-  
+
     if args.run_cutoff_version:
         spinner = Halo(text='Finding optimal parameters for learned algorithm with cutoff', spinner='dots')
     else:
@@ -152,25 +151,18 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
     for i, test_space in enumerate(space_allocations):
         test_space_cs = []
         test_space_cmin = []
-        test_params_cutoff_thresh = []
         test_params_partitions = []
 
         # test all combinations 
         for space_frac in space_fractions_to_test:
             for test_n_partition in n_partitions_to_test:
-                for test_cutoff_frac in cutoff_frac_to_test:
-                    # combination of parameters to test
-                    cutoff_thresh = int((test_cutoff_frac * test_space) / CUTOFF_SPACE_COST_FACTOR)
-                    test_params_cutoff_thresh.append(cutoff_thresh)
-                    test_space_post_cutoff = int(test_space - cutoff_thresh * CUTOFF_SPACE_COST_FACTOR)
-
-                    test_space_cs.append(int(test_space_post_cutoff * space_frac))
-                    test_space_cmin.append(int(test_space_post_cutoff * (1.0 - space_frac)))
-                    # TODO: figure out this constant; put in experiment_constants.py? 1.5 b/c otherwise worth storing in cutoff table
-                    num_items_for_cs = int(test_space_post_cutoff * space_frac/1.5)  
-                    partitions = compute_partitions(test_oracle_scores, num_items_for_cs , test_n_partition)
-                    test_params_partitions.append(partitions)
-                    test_params_cutoff_thresh.append(cutoff_thresh)
+                # combination of parameters to test
+                test_space_cs.append(int(test_space * space_frac))
+                test_space_cmin.append(int(test_space * (1.0 - space_frac)))
+                # TODO: figure out this constant; put in experiment_constants.py? 1.5 b/c otherwise worth storing in cutoff table
+                num_items_for_cs = int(test_space * space_frac)  
+                partitions = compute_partitions(test_oracle_scores, num_items_for_cs , test_n_partition)
+                test_params_partitions.append(partitions)
 
        
         spinner.info("Running " + str(len(test_space_cs)) + " different parameter combinations...")
@@ -188,13 +180,11 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
                 test_space_cs, 
                 test_space_cmin, 
                 test_params_partitions, 
-                repeat(cutoff), 
-                test_params_cutoff_thresh))
+                repeat(cutoff)))
             pool.close()
             pool.join()
 
         test_algo_predictions = [x[0] for x in results]
-
      
         losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_algo_predictions]
         best_loss_idx = np.argmin(losses)
@@ -202,11 +192,9 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
         space_cs = test_space_cs[best_loss_idx]
         space_cmin = test_space_cmin[best_loss_idx]
         partitions = test_params_partitions[best_loss_idx]
-        cutoff_thresh = test_params_cutoff_thresh[best_loss_idx]
         best_space_cs.append(space_cs)
         best_space_cmin.append(space_cmin) # 1-space_frac (use all remaining space)
         best_partitions_for_space.append(partitions)
-        best_cutoff_thresh_for_space.append(cutoff_thresh)
 
 
         spinner.info('Found optimal params for %.1f MB (took %.1f sec)' % (4*test_space/1e6, time.time() - start_t))
@@ -218,7 +206,6 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
         logger.info("Best space cs:       " + str(best_space_cs))
         logger.info("Best space cmin:     " + str(best_space_cmin))
         logger.info("Best partitions:     " + str(partitions))
-        logger.info("Best cutoff thresh:  " + str(best_cutoff_thresh_for_space))
 
     spinner.stop()
     np.savez(os.path.join(save_folder, save_file),
@@ -226,7 +213,6 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
         best_space_cs=best_space_cs,
         best_space_cmin=best_space_cmin,
         best_partitions_for_space=best_partitions_for_space,
-        best_cutoff_thresh_for_space=best_cutoff_thresh_for_space,
         space_allocations=space_allocations)
 
     return best_space_cs, best_space_cmin, best_partitions_for_space
@@ -410,8 +396,8 @@ def load_dataset(dataset, model, key, is_aol=False, is_synth=False):
     start_t = time.time()
     logger.info("Loading model...")
     data, oracle_scores = order_y_wkey_list(y, model, key)
-    # if not is_aol:
-    #     oracle_scores= np.exp(oracle_scores)
+    if not is_aol:
+        oracle_scores = np.exp(oracle_scores)
     logger.info('Done loading model (took %.1f sec)' % (time.time() - start_t))
     spinner.stop()
 
