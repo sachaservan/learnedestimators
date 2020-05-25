@@ -163,7 +163,7 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
 
                 if args.run_cutoff_version: 
                     # in cutoff; want all data to be evenly distributed 
-                    cutoff_thresh = int(test_space_cs / 2)
+                    cutoff_thresh = int(test_space * space_frac / 2)
                     partitions = compute_partitions(test_oracle_scores[cutoff_thresh:], 0 , test_n_partition)
                     partitions = np.concatenate(([sys.maxsize], partitions), axis=0)
                 else:
