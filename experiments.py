@@ -99,6 +99,8 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
             test_space_cs.append(int(test_space_post_cutoff))
 
         logger.info("Learning best parameters for space setting...")
+        start_t = time.time()
+
         with get_context("spawn").Pool() as pool:
             test_cutoff_predictions = pool.starmap(
                 run_cutoff_count_sketch, 
@@ -110,11 +112,13 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
             pool.join()
 
         # optimize for weighted loss 
-        losses = [np.sum(np.abs(test_data - predictions)*test_data) for predictions in test_algo_predictions]
+        losses = [np.sum(np.abs(test_data - predictions)*test_data) for predictions in test_cutoff_predictions]
         # losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_algo_predictions]
         best_loss_idx = np.argmin(losses)
 
-        spinner.info("Found optimal params for " + str(test_space/1e6) + "MB")
+        spinner.info('Found optimal params for %.1f MB (took %.1f sec)' % (4*test_space/1e6, time.time() - start_t))
+        logger.info('Found optimal params for %.1f MB (took %.1f sec)' % (4*test_space/1e6, time.time() - start_t))
+
         space_cs = test_space_cs[best_loss_idx]
         cutoff_thresh = test_params_cutoff_thresh[best_loss_idx]
         best_space_cs.append(space_cs)
@@ -169,8 +173,14 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
                     test_params_partitions.append(partitions)
                     test_params_cutoff_thresh.append(cutoff_thresh)
 
+       
         spinner.info("Running " + str(len(test_space_cs)) + " different parameter combinations...")
+        spinner.start()
+       
         logger.info("Learning best parameters for space setting...")
+       
+        start_t = time.time()
+
         with get_context("spawn").Pool() as pool:
             results = pool.starmap(
                 run_learned_count_sketch, 
@@ -200,13 +210,17 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
         best_partitions_for_space.append(partitions)
         best_cutoff_thresh_for_space.append(cutoff_thresh)
 
-        spinner.info("Found optimal params for " + str(test_space/1e6) + "MB")
-        logger.info("All L2 losses       " + str(losses))
-        logger.info("Best L2 loss        " + str(losses[best_loss_idx]))
-        logger.info("Best space cs:      " + str(best_space_cs))
-        logger.info("Best space cmin:    " + str(best_space_cmin))
-        logger.info("Best partitions:    " + str(partitions))
-        logger.info("Best cutoff thresh: " + str(best_cutoff_thresh_for_space))
+
+        spinner.info('Found optimal params for %.1f MB (took %.1f sec)' % (4*test_space/1e6, time.time() - start_t))
+        spinner.start()
+
+        logger.info('Found optimal params for %.1f MB (took %.1f sec)' % (4*test_space/1e6, time.time() - start_t))
+        logger.info("All Weighted losses: " + str(losses))
+        logger.info("Best Weighted loss:  " + str(losses[best_loss_idx]))
+        logger.info("Best space cs:       " + str(best_space_cs))
+        logger.info("Best space cmin:     " + str(best_space_cmin))
+        logger.info("Best partitions:     " + str(partitions))
+        logger.info("Best cutoff thresh:  " + str(best_cutoff_thresh_for_space))
 
     spinner.stop()
     np.savez(os.path.join(save_folder, save_file),
