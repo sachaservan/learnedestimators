@@ -111,9 +111,8 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
             pool.close()
             pool.join()
 
-        # optimize for weighted loss 
-        losses = [np.sum(np.abs(test_data - predictions)*test_data) for predictions in test_cutoff_predictions]
-        # losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_algo_predictions]
+      
+        losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_cutoff_predictions]
         best_loss_idx = np.argmin(losses)
 
         spinner.info('Found optimal params for %.1f MB (took %.1f sec)' % (4*test_space/1e6, time.time() - start_t))
@@ -196,9 +195,8 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
 
         test_algo_predictions = [x[0] for x in results]
 
-        # optimize for weighted loss 
-        losses = [np.sum(np.abs(test_data - predictions)*test_data) for predictions in test_algo_predictions]
-        # losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_algo_predictions]
+     
+        losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_algo_predictions]
         best_loss_idx = np.argmin(losses)
       
         space_cs = test_space_cs[best_loss_idx]
@@ -215,8 +213,8 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
         spinner.start()
 
         logger.info('Found optimal params for %.1f MB (took %.1f sec)' % (4*test_space/1e6, time.time() - start_t))
-        logger.info("All Weighted losses: " + str(losses))
-        logger.info("Best Weighted loss:  " + str(losses[best_loss_idx]))
+        logger.info("All L2 losses:       " + str(losses))
+        logger.info("Best L2 loss:        " + str(losses[best_loss_idx]))
         logger.info("Best space cs:       " + str(best_space_cs))
         logger.info("Best space cmin:     " + str(best_space_cmin))
         logger.info("Best partitions:     " + str(partitions))

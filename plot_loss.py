@@ -83,9 +83,7 @@ if __name__ == '__main__':
     space_percent = [math.ceil(x) for x in (space*1e8) / ((len(true_counts)-1) * 4)]
     
      # TODO: hack for corrupt data 
-    space_percent = np.delete(space_percent, len(space_percent) - 4)
-    space_percent = np.delete(space_percent, len(space_percent) - 2)
-
+     
     for i in range(len(loss_functions)):
         loss_sketch = []
         loss_learned =  []
@@ -98,10 +96,6 @@ if __name__ == '__main__':
             loss_for_space_sketch = 0
             loss_for_space_cutoff_algo = 0
             loss_for_space_cutoff_count_sketch = 0
-
-            # TODO: hack for corrupt data 
-            if j == len(space) - 4 or j == len(space) - 2:
-                continue
 
             for k in range(len(true_counts)):
                 loss_for_space_algo = loss_functions[i](loss_for_space_algo, true_counts[k], algo_predictions[j][k])
