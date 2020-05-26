@@ -87,13 +87,16 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
             loss_per_partition[0] += np.abs(items[i] - item_est[i])
             number_of_items_processed_sanity_check += 1
         space_total_sanity_check += n_buckets_partition_cs * n_hash_partition_cs
+    else:
+        assert(sizes[0] == 0, 'ERROR: no space allocated for count-sketch yet items placed in that partition!')
 
     #################################################
     # run count-min on all other partitions 
     #################################################
     for i in range(1, n_partitions):
+        space_total_sanity_check += n_buckets_partition_cmin*n_hash_partition_cmin
+
         if sizes[i] == 0:
-            space_total_sanity_check += n_buckets_partition_cmin*n_hash_partition_cmin
             continue
 
         start = end
@@ -137,27 +140,28 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
             loss_per_partition[i] += np.abs(item_est[start+j] - part_items[j])
             sum_indices_sanity_check += start+j
 
-        logger.info("///////////////////////////////////////////////////////////")
-        logger.info("partition size:               " + str(len(part_items)))
-        logger.info("patition size (estimated):    " + str(n_distinct_elements))
-        logger.info("partition mean:               " + str(np.mean(part_items)))
-        logger.info("partition mean (estimated):   " + str(part_mean))
-        logger.info("partition std:                " + str(np.std(part_items)))
-        logger.info("partition std (estimated):    " + str(part_std))
-        logger.info("n_buckets:                    " + str(n_buckets_partition_cmin))
-        logger.info("L1 loss (total):              " + str(loss_per_partition[i]))
-        logger.info("///////////////////////////////////////////////////////////")
+        # logger.info("///////////////////////////////////////////////////////////")
+        # logger.info("partition size:               " + str(len(part_items)))
+        # logger.info("patition size (estimated):    " + str(n_distinct_elements))
+        # logger.info("partition mean:               " + str(np.mean(part_items)))
+        # logger.info("partition mean (estimated):   " + str(part_mean))
+        # logger.info("partition std:                " + str(np.std(part_items)))
+        # logger.info("partition std (estimated):    " + str(part_std))
+        # logger.info("n_buckets:                    " + str(n_buckets_partition_cmin))
+        # logger.info("L1 loss (total):              " + str(loss_per_partition[i]))
+        # logger.info("///////////////////////////////////////////////////////////")
 
-    # make sure we're not using more buckets than originally allocated to the algorithm
-    if space_total_sanity_check > space_cmin + space_cs:
-        logger.info("WARNING: too much used space; are all the parameters correct?")
-    
     logger.info("///////////////////////////////////////////////////////////")
     logger.info("Total space used:  " + str(space_total_sanity_check))
     logger.info("Total loss:        " + str(np.sum(loss_per_partition)))
     logger.info("# of partitions:   " + str(len(sizes)))
     logger.info("# items processed: " + str(number_of_items_processed_sanity_check)  + " (" + str(len(items)) + " total items)")
     logger.info("///////////////////////////////////////////////////////////")
+
+
+    # make sure we're not using more buckets than originally allocated to the algorithm
+    assert(space_total_sanity_check > space_cmin + space_cs, 'ERROR: too much used space; are all the parameters correct?')
+    assert(number_of_items_processed_sanity_check != len(items), 'ERROR: did not process all items!')
 
     return item_est, loss_per_partition
 

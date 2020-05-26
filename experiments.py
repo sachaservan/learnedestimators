@@ -125,6 +125,7 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
         cutoff_thresh = test_params_cutoff_thresh[best_loss_idx]
 
         spinner.info('Found optimal params for %.1f MB (took %.1f sec)' % (4*test_space/1e6, time.time() - start_t))
+        spinner.start()
         logger.info('Found optimal params for %.1f MB (took %.1f sec)' % (4*test_space/1e6, time.time() - start_t))
 
         best_space_cs.append(space_cs)
@@ -162,7 +163,7 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
         for space_frac in space_fractions_to_test:
             for test_n_partition in n_partitions_to_test:
                 # combination of parameters to test
-                test_space_cs.append(int(test_space * space_frac))
+                test_space_cs.append(int(test_space * space_frac)/1.5) #TODO: deal with this magic constant 
                 test_space_cmin.append(int(test_space * (1.0 - space_frac)))
                 # TODO: figure out this constant; put in experiment_constants.py? 1.5 b/c otherwise worth storing in cutoff table
                 num_items_for_cs = int(test_space * space_frac) 
@@ -184,7 +185,12 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
                     
                 else:
                     partitions = compute_partitions(test_oracle_scores, num_items_for_cs , test_n_partition)
-                
+                  
+                    # in case parameter combo leads to no space allocated to count sketch 
+                    # need to ensure that all items are accounted for 
+                    if num_items_for_cs == 0:
+                        partitions = np.array([sys.maxsize] + partitions.tolist())
+
                 test_params_partitions.append(partitions)
 
        
@@ -254,6 +260,12 @@ def experiment_comapre_loss_with_cutoff(
     save_file, 
     space_list):
 
+    # sort the data however we need it (here according to predicted scores)
+    sort = np.argsort(valid_oracle_scores)[::-1]
+    valid_oracle_predictions = valid_oracle_scores[sort]
+    valid_data = valid_data[sort]
+    true_values = valid_data
+
      # learned algo with cutoff 
     valid_cutoff_algo_predictions = []
     loss_per_partition = []
@@ -295,6 +307,7 @@ def experiment_comapre_loss_with_cutoff(
     # save all results to the folder
     #################################################################
     np.savez(os.path.join(save_folder, save_file),
+        true_values=true_values,
         valid_cutoff_count_sketch_predictions=valid_cutoff_count_sketch_predictions,
         valid_cutoff_algo_predictions=valid_cutoff_algo_predictions,
         loss_per_partition=loss_per_partition,

@@ -5,16 +5,16 @@ rm eval.log
 
 # find optimal parameters for regular learned experiment 
 python3 experiments.py \
-   --space_list 0.1 0.5 1 2 3 4 \
+   --space_list 0.1 0.5 1 2 3 4.27 \
    --test_dataset ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
    --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
    --save_folder experiments \
    --save_file ip_optimal_params \
    --n_workers 36 \
 
-# CUTOFF find optimal parameters for regular learned experiment with cutoff strategy
+# # CUTOFF find optimal parameters for regular learned experiment with cutoff strategy
 python3 experiments.py \
-   --space_list 0.1 0.5 1 2 3 4 \
+   --space_list 0.1 0.5 1 2 3 4.27 \
    --test_dataset ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
    --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
    --save_folder experiments \
@@ -23,7 +23,7 @@ python3 experiments.py \
    --run_cutoff_version \
 
 
-# run experiment over the test dataset with optimal params 
+# # run experiment over the test dataset with optimal params 
 python3 experiments.py \
    --valid_dataset ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
    --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
@@ -33,28 +33,28 @@ python3 experiments.py \
    --n_workers 36 \
 
 
-# CUTOFF run experiment over the test dataset with optimal params 
+# # CUTOFF run experiment over the test dataset with optimal params 
 python3 experiments.py \
    --valid_dataset ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
    --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
-   --optimal_params ./experiments/ip_optimal_params_with_cutoff_learned.npz experiments/ip_optimal_params_with_cutoff_count_sketch.npz\
+   --optimal_params ./experiments/ip_optimal_params_with_cutoff_learned.npz ./experiments/ip_optimal_params_with_cutoff_count_sketch.npz\
    --save_folder experiments \
    --save_file ip_learned_sketch_with_cutoff_experiment_results \
    --n_workers 36 \
    --run_cutoff_version \
 
 
-# === AOL ===
+# # === AOL ===
 python3 experiments.py \
    --aol \
-   --space_list 0.025 0.05 0.1 0.5 0.7 1 1.2 \
+   --space_list 0.005 0.01 0.025 0.04 0.05 0.1 0.2 0.3 0.4 0.56 \
    --test_dataset ./data/aol_0005_len60.npz \
    --model ./paper_model/aol_inf_all_v05_t06_exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra_20180514-160509_ep190_res.npz \
    --save_file aol_optimal_params \
    --save_folder experiments \
    --n_workers 36 \
 
-python3 experiments.py \
+# python3 experiments.py \
    --aol \
    --valid_dataset ./data/aol_0050_len60.npz \
    --model ./paper_model/aol_inf_all_v05_t50_exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra_20180514-160509_ep190_res.npz \
@@ -64,10 +64,10 @@ python3 experiments.py \
    --n_workers 36 \
 
 
-# CUTOFF find optimal parameters for regular learned experiment with cutoff strategy
+# # CUTOFF find optimal parameters for regular learned experiment with cutoff strategy
 python3 experiments.py \
    --aol \
-   --space_list 0.025 0.05 0.1 0.5 0.7 1 1.2 \
+   --space_list 0.005 0.01 0.025 0.04 0.05 0.1 0.2 0.3 0.4 0.56 \
    --test_dataset ./data/aol_0005_len60.npz \
    --model ./paper_model/aol_inf_all_v05_t06_exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra_20180514-160509_ep190_res.npz \
    --save_folder experiments \
@@ -78,9 +78,10 @@ python3 experiments.py \
 
 # CUTOFF run experiment over the test dataset with optimal params 
 python3 experiments.py \
+   --aol \
    --valid_dataset ./data/aol_0050_len60.npz \
    --model ./paper_model/aol_inf_all_v05_t50_exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra_20180514-160509_ep190_res.npz \
-   --optimal_params ./experiments/aol_optimal_params_with_cutoff_learned.npz experiments/aol_optimal_params_with_cutoff_count_sketch.npz\
+   --optimal_params ./experiments/aol_optimal_params_with_cutoff_learned.npz ./experiments/aol_optimal_params_with_cutoff_count_sketch.npz\
    --save_folder experiments \
    --save_file aol_learned_sketch_with_cutoff_experiment_results \
    --n_workers 36 \
