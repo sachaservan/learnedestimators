@@ -44,7 +44,6 @@ python3 experiments.py \
    --run_cutoff_version \
 
 
-
 # === AOL ===
 python3 experiments.py \
    --aol \
@@ -61,8 +60,31 @@ python3 experiments.py \
    --model ./paper_model/aol_inf_all_v05_t50_exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra_20180514-160509_ep190_res.npz \
    --optimal_params ./experiments/aol_optimal_params_learned.npz \
    --save_folder experiments \
-   --save_file ip_learned_sketch_experiment_results \
+   --save_file aol_learned_sketch_experiment_results \
    --n_workers 36 \
+
+
+# CUTOFF find optimal parameters for regular learned experiment with cutoff strategy
+python3 experiments.py \
+   --aol \
+   --space_list 0.025 0.05 0.1 0.5 0.7 1 1.2 \
+   --test_dataset ./data/aol_0005_len60.npz \
+   --model ./paper_model/aol_inf_all_v05_t06_exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra_20180514-160509_ep190_res.npz \
+   --save_folder experiments \
+   --save_file aol_optimal_params_with_cutoff \
+   --n_workers 36 \
+   --run_cutoff_version \
+
+
+# CUTOFF run experiment over the test dataset with optimal params 
+python3 experiments.py \
+   --valid_dataset ./data/aol_0050_len60.npz \
+   --model ./paper_model/aol_inf_all_v05_t50_exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra_20180514-160509_ep190_res.npz \
+   --optimal_params ./experiments/aol_optimal_params_with_cutoff_learned.npz experiments/aol_optimal_params_with_cutoff_count_sketch.npz\
+   --save_folder experiments \
+   --save_file aol_learned_sketch_with_cutoff_experiment_results \
+   --n_workers 36 \
+   --run_cutoff_version \
 
 
 
