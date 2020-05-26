@@ -161,7 +161,7 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
 
     # make sure we're not using more buckets than originally allocated to the algorithm
     assert space_total_sanity_check <= space_cmin + space_cs, 'ERROR: too much used space; are all the parameters correct?' + ' used: ' + str(space_total_sanity_check) + ' alloted: ' + str(space_cmin + space_cs)
-    assert number_of_items_processed_sanity_check != len(items), 'ERROR: did not process all items!'
+    assert number_of_items_processed_sanity_check == len(items), 'ERROR: did not process all items!'
 
     return item_est, loss_per_partition
 
