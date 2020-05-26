@@ -5,7 +5,7 @@ rm eval.log
 
 # find optimal parameters for regular learned experiment 
 python3 experiments.py \
-   --space_list 0.1 0.2 0.3 0.4 0.5 0.8 1 2 3 4 4.3
+   --space_list 0.1 0.2 0.3 0.4 0.5 0.8 1 2 3 4 4.3 \
    --test_dataset data/equinix-chicago.dirA.20160121-130700.ports.npy \
    --model paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
    --save_file ip_optimal_params \
@@ -14,7 +14,7 @@ python3 experiments.py \
 
 # CUTOFF find optimal parameters for regular learned experiment with cutoff strategy
 python3 experiments.py \
-   --space_list 0.1 0.2 0.3 0.4 0.5 0.8 1 2 3 4 4.3
+   --space_list 0.1 0.2 0.3 0.4 0.5 0.8 1 2 3 4 4.3 \ 
    --test_dataset data/equinix-chicago.dirA.20160121-130700.ports.npy \
    --model paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
    --save_file ip_optimal_params_with_cutoff \
