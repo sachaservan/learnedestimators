@@ -42,12 +42,11 @@ def run_cutoff_count_sketch(y, y_scores, space, cutoff_threshold):
     n_buckets = int(space / COUNT_MIN_OPTIMAL_N_HASH)
     n_hash = COUNT_SKETCH_OPTIMAL_N_HASH
     sketch_estimates = count_sketch(y_cutoff.copy(), n_buckets, n_hash)
-    
+
     # prepend the table estimates to the count sketch estimates 
     all_estimates = table_estimates.tolist() + sketch_estimates.tolist()
     return all_estimates
   
-
 def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cutoff=False): 
 
     if cutoff:
