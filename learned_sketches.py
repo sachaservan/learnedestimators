@@ -53,12 +53,16 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
     # there could be a mismatch in test vs. validation preds 
     # so we just dump everything that's lower than the threshold
     # frequency into the last partition 
-    sizes[n_partitions-1] = len(scores[scores <= high])
+    sizes[len(sizes)-1] = len(scores[scores <= high])
 
     # count min setup 
     n_hash_partition_cmin = COUNT_MIN_OPTIMAL_N_HASH
     n_buckets_partition_cmin = int(space_cmin / n_hash_partition_cmin / (n_partitions - 1))
     n_buckets_partition_cmin -= int(EXTRA_SPACE_PER_PARTITION_IN_BYTES / (n_hash_partition_cmin * 4)) # space is in units of 4 bytes 
+
+    if n_buckets_partition_cmin < MIN_N_BUCKETS or n_buckets_partition_cs < MIN_N_BUCKETS:
+         return item_est, loss_per_partition 
+        # TODO: too little space allocated for cmin 
 
     logger.info("///////////////////////////////////////////////////////////")
     logger.info("Partition sizes:                       " + str(sizes))
@@ -68,7 +72,7 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
 
     ####################################
     # SANITY CHECKING
-    space_total_sanity_check = 0
+    space_total_sanity_check = int(EXTRA_SPACE_PER_PARTITION_IN_BYTES / (n_hash_partition_cmin * 4))
     number_of_items_processed_sanity_check = 0
     sum_indices_sanity_check = 0
     ####################################
