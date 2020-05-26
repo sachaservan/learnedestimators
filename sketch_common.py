@@ -83,11 +83,11 @@ def hyperloglogsimulate(n, m):
     byte registers. see https://en.wikipedia.org/wiki/HyperLogLog
     '''
 
-    assert(math.log(m, 2).is_integer()) # m must be a power of two
+    assert math.log(m, 2).is_integer() # m must be a power of two
 
     lm = int(math.log(m, 2))
 
-    assert(lm < 64) # the "hash" assumes 128 bits of which the first lm are used
+    assert lm < 64 # the "hash" assumes 128 bits of which the first lm are used
 
     # compute optimal constant based on number of registers
     if m == 16:

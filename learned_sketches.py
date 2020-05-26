@@ -88,7 +88,7 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
             number_of_items_processed_sanity_check += 1
         space_total_sanity_check += n_buckets_partition_cs * n_hash_partition_cs
     else:
-        assert(sizes[0] == 0, 'ERROR: no space allocated for count-sketch yet items placed in that partition!')
+        assert sizes[0] == 0, 'ERROR: no space allocated for count-sketch yet items placed in that partition!'
 
     #################################################
     # run count-min on all other partitions 
@@ -160,8 +160,8 @@ def learned_count_sketch_partitions(items, scores, space_cs, space_cmin, partiti
 
 
     # make sure we're not using more buckets than originally allocated to the algorithm
-    assert(space_total_sanity_check > space_cmin + space_cs, 'ERROR: too much used space; are all the parameters correct?')
-    assert(number_of_items_processed_sanity_check != len(items), 'ERROR: did not process all items!')
+    assert space_total_sanity_check > space_cmin + space_cs, 'ERROR: too much used space; are all the parameters correct?'
+    assert number_of_items_processed_sanity_check != len(items), 'ERROR: did not process all items!'
 
     return item_est, loss_per_partition
 
