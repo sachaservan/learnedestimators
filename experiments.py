@@ -38,12 +38,14 @@ def run_count_sketch(y, n_hashes, n_buckets):
 
 def run_cutoff_count_sketch(y, y_scores, space, cutoff_threshold): 
     y_cutoff = y[cutoff_threshold:] # all items that have a predicted score > cutoff_thresh
-    table_estimates = y[:cutoff_threshold] # store exact counts for all 
+    table_estimates = np.array(y[:cutoff_threshold]) # store exact counts for all 
     n_buckets = int(space / COUNT_MIN_OPTIMAL_N_HASH)
     n_hash = COUNT_SKETCH_OPTIMAL_N_HASH
     sketch_estimates = count_sketch(y_cutoff.copy(), n_buckets, n_hash)
     
-    return np.concatenate((table_estimates, sketch_estimates),  axis=0).tolist()
+    # prepend the table estimates to the count sketch estimates 
+    all_estimates = table_estimates.tolist() + sketch_estimates.tolist()
+    return all_estimates
   
 
 def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cutoff=False): 
@@ -55,7 +57,10 @@ def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cuto
         y_scores_cutoff = y_scores[cutoff_threshold:]
         table_estimates = y[:cutoff_threshold] # store exact counts for all 
         sketch_estimates, loss_per_partition = learned_count_sketch_partitions(y_cutoff.copy(), y_scores_cutoff.copy(), 0, space_cmin, partitions)
-        return np.concatenate((table_estimates, sketch_estimates),  axis=0).tolist(), loss_per_partition
+
+        # prepend the table estimates to the count sketch estimates 
+        all_estimates = table_estimates.tolist() + sketch_estimates.tolist()
+        return all_estimates, loss_per_partition
     else:
         estimates, loss_per_partition = learned_count_sketch_partitions(y.copy(), y_scores.copy(), space_cs, space_cmin, partitions)
         return estimates, loss_per_partition
@@ -102,6 +107,7 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
         logger.info("Learning best parameters for space setting...")
         start_t = time.time()
 
+        test_cutoff_predictions = []
         with get_context("spawn").Pool() as pool:
             test_cutoff_predictions = pool.starmap(
                 run_cutoff_count_sketch, 
@@ -115,12 +121,12 @@ def find_best_parameters_for_cutoff(test_data, test_oracle_scores, space_list, s
       
         losses = [np.sum(np.abs(test_data - predictions)**2) for predictions in test_cutoff_predictions]
         best_loss_idx = np.argmin(losses)
+        space_cs = test_space_cs[best_loss_idx]
+        cutoff_thresh = test_params_cutoff_thresh[best_loss_idx]
 
         spinner.info('Found optimal params for %.1f MB (took %.1f sec)' % (4*test_space/1e6, time.time() - start_t))
         logger.info('Found optimal params for %.1f MB (took %.1f sec)' % (4*test_space/1e6, time.time() - start_t))
 
-        space_cs = test_space_cs[best_loss_idx]
-        cutoff_thresh = test_params_cutoff_thresh[best_loss_idx]
         best_space_cs.append(space_cs)
         best_cutoff_thresh_for_space.append(cutoff_thresh)
         
@@ -161,13 +167,24 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
                 # TODO: figure out this constant; put in experiment_constants.py? 1.5 b/c otherwise worth storing in cutoff table
                 num_items_for_cs = int(test_space * space_frac) 
 
+                # avoid situation where everything is stored in count sketch...
+                if num_items_for_cs >= len(test_data):
+                    continue
+
                 if args.run_cutoff_version: 
-                    # in cutoff; want all data to be evenly distributed 
+                    # in cutoff; we just take the space allocated for CS and use it to store items 
                     cutoff_thresh = int(test_space * space_frac / 2)
+              
+                    # avoid situation where everything is cut out 
+                    if cutoff_thresh >= len(test_data)/2:
+                        continue
+                    
                     partitions = compute_partitions(test_oracle_scores[cutoff_thresh:], 0 , test_n_partition)
-                    partitions = np.concatenate(([sys.maxsize], partitions), axis=0)
+                    partitions = np.array([sys.maxsize] + partitions.tolist())
+                    
                 else:
                     partitions = compute_partitions(test_oracle_scores, num_items_for_cs , test_n_partition)
+                
                 test_params_partitions.append(partitions)
 
        
