@@ -478,16 +478,12 @@ if __name__ == '__main__':
         # figure out whether we need to load multiple param files
         best_cutoff_thresh_count_sketch = []
         best_cutoff_space_count_sketch = []
-        learned_optimal_params = ''
+        learned_optimal_params = args.optimal_params[0]
         if len(args.optimal_params) > 1:
-            learned_optimal_params = args.optimal_params[0]
             count_sketch_optimal_params = args.optimal_params[1]
             data = np.load(count_sketch_optimal_params)
             best_cutoff_space_count_sketch = np.array(data['best_cutoff_space_count_sketch'])
             best_cutoff_thresh_count_sketch = np.array(data['best_cutoff_count_sketch_thresh_for_space'])
-        else:
-            learned_optimal_params = args.optimal_params[0]
-
 
         data = np.load(learned_optimal_params)
         space_list = np.array(data['space_list'])
