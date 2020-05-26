@@ -189,7 +189,7 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
                     # in case parameter combo leads to no space allocated to count sketch 
                     # need to ensure that all items are accounted for 
                     if num_items_for_cs == 0:
-                        partitions = np.array([sys.maxsize] + partitions.tolist())
+                        partitions[0] = sys.maxsize # prevent anything from being placed in this partition 
 
                 test_params_partitions.append(partitions)
 
