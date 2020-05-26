@@ -74,16 +74,17 @@ if __name__ == '__main__':
         results_cutoff = np.load(args.results_cutoff,  allow_pickle=True)
         cutoff_algo_predictions = np.array(results_cutoff['valid_cutoff_algo_predictions'])
         cutoff_count_sketch_predictions = np.array(results_cutoff['valid_cutoff_count_sketch_predictions'])
-    else:
-        cutoff_algo_predictions = algo_predictions
-        cutoff_count_sketch_predictions = count_sketch_predictions
+        true_counts2 = np.array(results_cutoff['true_values'])
+        print("num space " + str(len(cutoff_algo_predictions)))
 
-    total = len(true_counts)
+    else:
+        cutoff_algo_predictions = np.ones(len(algo_predictions))
+        cutoff_count_sketch_predictions = np.ones(len(count_sketch_predictions))
+
+    total = sum(true_counts)
     
     space_percent = [math.ceil(x) for x in (space*1e8) / ((len(true_counts)-1) * 4)]
-    
-     # TODO: hack for corrupt data 
-     
+         
     for i in range(len(loss_functions)):
         loss_sketch = []
         loss_learned =  []
@@ -119,8 +120,8 @@ if __name__ == '__main__':
 
         ax.plot(space_percent, loss_sketch, label="Count Sketch", linewidth=3, color=colors[0], zorder=5)
         ax.plot(space_percent, loss_learned, label=args.algo, linewidth=3, color=colors[1], zorder=6)
-       # ax.plot(space_percent, loss_just_cutoff, label="Cutoff Count Sketch", linestyle='dashdot', color=colors[3])
-        #ax.plot(space_percent, loss_learned_cutoff, label="Cutoff " + args.algo , linestyle='dashdot', color=colors[2])
+        ax.plot(space_percent, loss_just_cutoff, label="Cutoff Count Sketch", linestyle='dashdot', color=colors[3])
+        ax.plot(space_percent, loss_learned_cutoff, label="Cutoff " + args.algo , linestyle='dashdot', color=colors[2])
         # ax.plot(space, loss_learned_perfect_oracle_i, label=args.algo + " (perfect oracle)", linestyle='dotted', color=colors[4])
 
 

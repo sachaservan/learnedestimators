@@ -4,44 +4,44 @@ rm eval.log
 # === INTERNET TRAFFIC ===
 
 # find optimal parameters for regular learned experiment 
-# python3 experiments.py \
-#    --space_list 0.1 0.5 1 2 3 4.27 \
-#    --test_dataset ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
-#    --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
-#    --save_folder experiments \
-#    --save_file ip_optimal_params \
-#    --n_workers 100 \
+python3 experiments.py \
+   --space_list 0.1 0.5 1 2 3 4.27 \
+   --test_dataset ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
+   --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
+   --save_folder experiments \
+   --save_file ip_optimal_params \
+   --n_workers 100 \
 
 # CUTOFF find optimal parameters for regular learned experiment with cutoff strategy
-# python3 experiments.py \
-#    --space_list 0.1 0.5 1 2 3 4.27 \
-#    --test_dataset ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
-#    --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
-#    --save_folder experiments \
-#    --save_file ip_optimal_params_with_cutoff \
-#    --n_workers 100 \
-#    --run_cutoff_version \
+python3 experiments.py \
+   --space_list 0.1 0.5 1 2 3 4.27 \
+   --test_dataset ./data/equinix-chicago.dirA.20160121-130700.ports.npy \
+   --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
+   --save_folder experiments \
+   --save_file ip_optimal_params_with_cutoff \
+   --n_workers 100 \
+   --run_cutoff_version \
 
 
 # # run experiment over the test dataset with optimal params 
-# python3 experiments.py \
-#    --valid_dataset ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
-#    --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
-#    --optimal_params ./experiments/ip_optimal_params_learned.npz \
-#    --save_folder experiments \
-#    --save_file ip_learned_sketch_experiment_results \
-#    --n_workers 100 \
+python3 experiments.py \
+   --valid_dataset ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
+   --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
+   --optimal_params ./experiments/ip_optimal_params_learned.npz \
+   --save_folder experiments \
+   --save_file ip_learned_sketch_experiment_results \
+   --n_workers 100 \
 
 
 # # CUTOFF run experiment over the test dataset with optimal params 
-# python3 experiments.py \
-#    --valid_dataset ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
-#    --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
-#    --optimal_params ./experiments/ip_optimal_params_with_cutoff_learned.npz ./experiments/ip_optimal_params_with_cutoff_count_sketch.npz\
-#    --save_folder experiments \
-#    --save_file ip_learned_sketch_with_cutoff_experiment_results \
-#    --n_workers 100 \
-#    --run_cutoff_version \
+python3 experiments.py \
+   --valid_dataset ./data/equinix-chicago.dirA.20160121-132900.ports.npy \
+   --model ./paper_model/pred_exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep350_1329_res.npz \
+   --optimal_params ./experiments/ip_optimal_params_with_cutoff_learned.npz ./experiments/ip_optimal_params_with_cutoff_count_sketch.npz\
+   --save_folder experiments \
+   --save_file ip_learned_sketch_with_cutoff_experiment_results \
+   --n_workers 100 \
+   --run_cutoff_version \
 
 
 # === AOL ===

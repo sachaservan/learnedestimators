@@ -162,7 +162,7 @@ def find_best_parameters_for_learned_algo(test_data, test_oracle_scores, space_l
         for space_frac in space_fractions_to_test:
             for test_n_partition in n_partitions_to_test:
                 # combination of parameters to test
-                test_space_cs.append(int(test_space * space_frac)/1.5) #TODO: deal with this magic constant 
+                test_space_cs.append(int(test_space * space_frac)) #TODO: deal with this magic constant 
                 test_space_cmin.append(int(test_space * (1.0 - space_frac)))
                 # TODO: figure out this constant; put in experiment_constants.py? 1.5 b/c otherwise worth storing in cutoff table
                 num_items_for_cs = int(test_space * space_frac) 

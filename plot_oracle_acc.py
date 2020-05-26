@@ -34,6 +34,7 @@ if __name__ == '__main__':
     argparser.add_argument("--aol", action='store_true', default=False)
     argparser.add_argument("--synth", action='store_true', default=False)
     argparser.add_argument("--N", type=int, default=100)
+    argparser.add_argument("--space_index", type=int, default=0)
     args = argparser.parse_args()
 
     file_name = "experiments/err_ip.pdf"
@@ -43,32 +44,28 @@ if __name__ == '__main__':
         file_name = "experiments/err_synth.pdf"
    
     results_regular = np.load(args.results_learned,  allow_pickle=True)
-    space = np.array(results_regular['space_list'])
+    space_list = np.array(results_regular['space_list'])
     true_counts = np.array(results_regular['true_values'])
     pred_counts = np.array(results_regular['oracle_predictions'])
     algo_predictions = np.array(results_regular['valid_algo_predictions'])
     count_sketch_predictions = np.array(results_regular['valid_count_sketch_predictions'])
+    
+    loss_per_partition = np.array(results_regular['valid_loss_per_partition'])[args.space_index]
+    ax = plt.figure().gca()
+    ax.bar(range(len(loss_per_partition)), loss_per_partition)
+    ax.set_ylim([0, np.max(loss_per_partition)+100])
+    ax.set_xlabel('bucket id')
+    ax.set_ylabel('# packets')
+    plt.show()
 
-
-        #     loss_per_partition = np.array(data['valid_loss_per_partition'])[space_index]
-
-        # # ax = plt.figure().gca()
-        # # ax.bar(range(len(loss_per_partition)), loss_per_partition)
-        # # ax.set_ylim([0, np.max(loss_per_partition)+100])
-        # # ax.set_xlabel('bucket id')
-        # # ax.set_ylabel('# packets')
-        # # plt.show()
-
-    results_regular = np.load(args.results_learned,  allow_pickle=True)
-    true_counts = np.array(results_regular['true_values'])
-    pred_counts = np.array(results_regular['oracle_predictions'])
-    space_list = results_regular['space_list']
-    pred_counts = np.exp(pred_counts)
 
     if args.results_cutoff:
         results_cutoff = np.load(args.results_cutoff,  allow_pickle=True)
         cutoff_algo_predictions = np.array(results_cutoff['valid_cutoff_algo_predictions'])
         cutoff_count_sketch_predictions = np.array(results_cutoff['valid_cutoff_count_sketch_predictions'])
+        print("True counts :         " + str(true_counts[:100]))
+        print("Pred counts cutoff  : "  + str(cutoff_algo_predictions[0][:100]))
+
     else:
         cutoff_algo_predictions = algo_predictions
         cutoff_count_sketch_predictions = count_sketch_predictions
@@ -79,11 +76,13 @@ if __name__ == '__main__':
     true_counts = true_counts[sort][::-1]
     pred_counts = pred_counts[sort][::-1]
 
+    print("Dataset size: " + str(len(true_counts)*4/1e6) + " MB")
+
     # number of elements in the dataset total 
     num_data_points = len(true_counts)
 
     # plot absolute error and relative error 
-    fig, (ax_abs, ax_rel, ax_true) = plt.subplots(3)
+    fig, (ax_abs, ax_rel) = plt.subplots(2)
 
     if args.aol:
         fig.suptitle('AOL Dataset')
@@ -98,7 +97,7 @@ if __name__ == '__main__':
 
 
     for space_index in range(len(space_list)): 
-        if space_index != len(space_list)-4: # space_index != 0: # 
+        if space_index != args.space_index: # space_index != 0: # 
             continue
 
         print("Space: " + str(space_list[space_index]) + " MB")
@@ -111,23 +110,35 @@ if __name__ == '__main__':
 
         # compute the abs and relative erros for all items
         abs_error_oracle_raw = np.abs(true_counts - pred_counts) 
-        rel_error_oracle_raw = abs_error_oracle_raw / true_counts
+        rel_error_oracle_raw = abs_error_oracle_raw ** 2
 
         abs_error_algo_raw = np.abs(true_counts - algo_predictions_for_space) 
         abs_error_algo_cutoff_raw = np.abs(true_counts - cutoff_algo_predictions_for_space) 
-        rel_error_algo_raw = abs_error_algo_raw / true_counts
-        rel_error_algo_cutoff_raw = abs_error_algo_cutoff_raw / true_counts
+        rel_error_algo_raw = abs_error_algo_raw ** 2
+        rel_error_algo_cutoff_raw = abs_error_algo_cutoff_raw ** 2
        
-        print("L1 loss (learned) " + str(np.sum(abs_error_algo_raw)))
-        print("L2 loss (learned) " + str(np.sum(abs_error_algo_raw**2)))
+        loss_l1_algo = np.sum(abs_error_algo_raw)
+        loss_l2_algo = np.sum(abs_error_algo_raw**2)
+        print("L1 loss (learned) " + str(loss_l1_algo))
+        print("L2 loss (learned) " + str(loss_l2_algo))
 
         abs_error_sketch_raw = np.abs(true_counts - count_sketch_predictions_for_space) 
         abs_error_sketch_cutoff_raw = np.abs(true_counts - cutoff_count_sketch_predictions_for_space) 
-        rel_error_sketch_raw = abs_error_sketch_raw / true_counts
-        rel_error_sketch_cutoff_raw = abs_error_sketch_cutoff_raw / true_counts
+        rel_error_sketch_raw = abs_error_sketch_raw ** 2
+        rel_error_sketch_cutoff_raw = abs_error_sketch_cutoff_raw ** 2
       
-        print("L1 loss (sketch)  " + str(np.sum(abs_error_sketch_raw)))
-        print("L2 loss (sketch)  " + str(np.sum(abs_error_sketch_raw**2)))
+        loss_l1_sketch = np.sum(abs_error_sketch_raw)
+        loss_l2_sketch = np.sum(abs_error_sketch_raw**2)
+        loss_l1_sketch_cutoff = np.sum(abs_error_sketch_cutoff_raw)
+        loss_l2_sketch_cutoff = np.sum(abs_error_sketch_cutoff_raw**2)
+
+        print("L1 loss (sketch)         " + str(loss_l1_sketch))
+        print("L2 loss (sketch)         " + str(loss_l2_sketch))
+        print("L1 loss (sketch cutoff)  " + str(loss_l1_sketch_cutoff))
+        print("L2 loss (sketch cutoff)  " + str(loss_l2_sketch_cutoff))
+
+        print("L1 percent improv. " + str((loss_l1_sketch - loss_l1_algo)/loss_l1_sketch))
+        print("L2 percent improv. " + str((loss_l2_sketch - loss_l2_algo)/loss_l2_sketch))
 
         # grouped abs and relative errors 
         abs_error_oracle = np.array_split(abs_error_oracle_raw, N)
@@ -192,19 +203,19 @@ if __name__ == '__main__':
         std_err_algo = 1.96 * grouped_abs_error_algo_std / math.sqrt(sample_size)
         std_err_sketch = 1.96 * grouped_abs_error_sketch_std / math.sqrt(sample_size)
 
-        ax_abs.fill_between(
-            x_range,
-            grouped_abs_error_algo - std_err_algo, 
-            grouped_abs_error_algo + std_err_algo, 
-            color=colors[0],
-            alpha=0.2)
+        # ax_abs.fill_between(
+        #     x_range,
+        #     grouped_abs_error_algo - std_err_algo, 
+        #     grouped_abs_error_algo + std_err_algo, 
+        #     color=colors[0],
+        #     alpha=0.2)
             
-        ax_abs.fill_between(
-            x_range,
-            grouped_abs_error_sketch - std_err_sketch, 
-            grouped_abs_error_sketch + std_err_sketch,
-            color=colors[1],
-            alpha=0.2)
+        # ax_abs.fill_between(
+        #     x_range,
+        #     grouped_abs_error_sketch - std_err_sketch, 
+        #     grouped_abs_error_sketch + std_err_sketch,
+        #     color=colors[1],
+        #     alpha=0.2)
 
         ax_abs.yaxis.grid(color=gridcolor, linestyle=linestyle)
         ax_abs.xaxis.grid(color=gridcolor, linestyle=linestyle)
@@ -220,8 +231,8 @@ if __name__ == '__main__':
 
         # plot relative error
         #ax_rel.plot(x_range, grouped_rel_error_oracle, color=color_alt, label="Oracle Prediction", linestyle='--')
-        ax_rel.plot(x_range, grouped_rel_error_algo, color=colors[0], label="Learned Count Sketch")
-        ax_rel.plot(x_range, grouped_rel_error_sketch, color=colors[1], label="Count Sketch")
+        ax_rel.plot(x_range, grouped_rel_error_algo, color=colors[1], label="Learned Count Sketch")
+        ax_rel.plot(x_range, grouped_rel_error_sketch, color=colors[0], label="Count Sketch")
         ax_rel.plot(x_range, grouped_rel_error_algo_cutoff, color=colors[2], label="Learned Count Sketch + cutoff", linestyle='-')
         ax_rel.plot(x_range, grouped_rel_error_sketch_cutoff, color=colors[3], label="Count Sketch + cutoff", linestyle='-')
 
@@ -230,20 +241,20 @@ if __name__ == '__main__':
         std_err_algo = grouped_rel_error_algo_std / math.sqrt(sample_size)
         std_err_sketch = 1.96 * grouped_rel_error_sketch_std / math.sqrt(sample_size)
     
-        ax_rel.fill_between(
-            x_range,
-            grouped_rel_error_algo - std_err_algo, 
-            grouped_rel_error_algo + std_err_algo, 
-            color=colors[0],
-            alpha=0.2,
-        )
-        ax_rel.fill_between(
-            x_range,
-            grouped_rel_error_sketch - std_err_sketch, 
-            grouped_rel_error_sketch + std_err_sketch,
-            color=colors[1],
-            alpha=0.2,
-        )
+        # ax_rel.fill_between(
+        #     x_range,
+        #     grouped_rel_error_algo - std_err_algo, 
+        #     grouped_rel_error_algo + std_err_algo, 
+        #     color=colors[0],
+        #     alpha=0.2,
+        # )
+        # ax_rel.fill_between(
+        #     x_range,
+        #     grouped_rel_error_sketch - std_err_sketch, 
+        #     grouped_rel_error_sketch + std_err_sketch,
+        #     color=colors[1],
+        #     alpha=0.2,
+        # )
     
         ax_rel.yaxis.grid(color=gridcolor, linestyle=linestyle)
         ax_rel.xaxis.grid(color=gridcolor, linestyle=linestyle)
@@ -252,17 +263,16 @@ if __name__ == '__main__':
         ax_rel.set_ylabel("Relative Error")
 
 
-        ax_true.plot(x_range, grouped_true_counts, label="True Frequency")
-        ax_true.plot(x_range, grouped_oracle_counts, color=colors[0], label="Oracle Prediction", linestyle='--')
-        ax_true.plot(x_range, grouped_true_counts_sorted, color=colors[1], label="Sorted by Oracle")
-        ax_true.yaxis.grid(color=gridcolor, linestyle=linestyle)
-        ax_true.xaxis.grid(color=gridcolor, linestyle=linestyle)
-        ax_true.set_axisbelow(True)
-        ax_true.set_yscale('log')
-        ax_true.set_ylabel("Frequency")
-        ax_true.set_xlabel('Cumulative Distribution')
+        # ax_true.plot(x_range, grouped_true_counts, label="True Frequency")
+        # ax_true.plot(x_range, grouped_oracle_counts, color=colors[0], label="Oracle Prediction", linestyle='--')
+        # ax_true.plot(x_range, grouped_true_counts_sorted, color=colors[1], label="Sorted by Oracle")
+        # ax_true.yaxis.grid(color=gridcolor, linestyle=linestyle)
+        # ax_true.xaxis.grid(color=gridcolor, linestyle=linestyle)
+        # ax_true.set_axisbelow(True)
+        # ax_true.set_yscale('log')
+        # ax_true.set_ylabel("Frequency")
+        # ax_true.set_xlabel('Cumulative Distribution')
 
-        ax_abs.legend(loc='best')
 
     plt.legend(loc='best')
     plt.savefig(file_name)
