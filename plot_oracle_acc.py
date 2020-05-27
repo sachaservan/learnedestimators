@@ -82,7 +82,7 @@ if __name__ == '__main__':
     num_data_points = len(true_counts)
 
     # plot absolute error and relative error 
-    fig, (ax_abs, ax_rel) = plt.subplots(2)
+    fig, (ax_abs, ax_rel, ax_true) = plt.subplots(3)
 
     if args.aol:
         fig.suptitle('AOL Dataset')
@@ -263,15 +263,15 @@ if __name__ == '__main__':
         ax_rel.set_ylabel("Relative Error")
 
 
-        # ax_true.plot(x_range, grouped_true_counts, label="True Frequency")
-        # ax_true.plot(x_range, grouped_oracle_counts, color=colors[0], label="Oracle Prediction", linestyle='--')
-        # ax_true.plot(x_range, grouped_true_counts_sorted, color=colors[1], label="Sorted by Oracle")
-        # ax_true.yaxis.grid(color=gridcolor, linestyle=linestyle)
-        # ax_true.xaxis.grid(color=gridcolor, linestyle=linestyle)
-        # ax_true.set_axisbelow(True)
-        # ax_true.set_yscale('log')
-        # ax_true.set_ylabel("Frequency")
-        # ax_true.set_xlabel('Cumulative Distribution')
+        ax_true.plot(x_range, grouped_true_counts, label="True Frequency")
+        ax_true.plot(x_range, grouped_oracle_counts, color=colors[0], label="Oracle Prediction", linestyle='--')
+        ax_true.plot(x_range, grouped_true_counts_sorted, color=colors[1], label="Sorted by Oracle")
+        ax_true.yaxis.grid(color=gridcolor, linestyle=linestyle)
+        ax_true.xaxis.grid(color=gridcolor, linestyle=linestyle)
+        ax_true.set_axisbelow(True)
+        ax_true.set_yscale('log')
+        ax_true.set_ylabel("Frequency")
+        ax_true.set_xlabel('Cumulative Distribution')
 
 
     plt.legend(loc='best')

@@ -430,6 +430,9 @@ def load_dataset(dataset, model, key, perfect_oracle=False, is_aol=False, is_syn
 
     if perfect_oracle:
         oracle_scores = data / np.sum(data) # perfect predictions 
+        sort = np.argsort(oracle_scores)[::-1]
+        oracle_scores = oracle_scores[sort]
+        data = data[sort]
 
     return data, oracle_scores
 
