@@ -64,7 +64,6 @@ def run_learned_count_sketch(y, y_scores, space_cs, space_cmin, partitions, cuto
         estimates, loss_per_partition = learned_count_sketch_partitions(y.copy(), y_scores.copy(), space_cs, space_cmin, partitions)
         return estimates, loss_per_partition
 
-#################################################
 def compute_partitions(scores, num_items_for_cs, n_partitions):
     splits = np.array_split(scores, n_partitions)
     sizes = [len(splits[k]) for k in range(n_partitions)]
@@ -259,12 +258,6 @@ def experiment_comapre_loss_with_cutoff(
     save_file, 
     space_list):
 
-    # sort the data however we need it (here according to predicted scores)
-    sort = np.argsort(valid_oracle_scores)[::-1]
-    valid_oracle_predictions = valid_oracle_scores[sort]
-    valid_data = valid_data[sort]
-    true_values = valid_data
-
      # learned algo with cutoff 
     valid_cutoff_algo_predictions = []
     loss_per_partition = []
@@ -324,12 +317,6 @@ def experiment_comapre_loss_no_cutoff(
     save_file, 
     space_list):
 
-    # sort the data however we need it (here according to predicted scores)
-    sort = np.argsort(valid_oracle_scores)[::-1]
-    valid_oracle_predictions = valid_oracle_scores[sort]
-    valid_data = valid_data[sort]
-    true_values = valid_data
-
     #################################################################
     # evaluate vanilla sketching algorithm against learned sketches
     #################################################################
@@ -373,8 +360,8 @@ def experiment_comapre_loss_no_cutoff(
     # save all results to the folder
     #################################################################
     np.savez(os.path.join(save_folder, save_file),
-        true_values=true_values,
-        oracle_predictions=valid_oracle_predictions,
+        true_values=valid_data,
+        oracle_predictions=valid_oracle_scores,
         valid_algo_predictions=valid_algo_predictions,
         valid_count_sketch_predictions=test_count_sketch_predictions,
         valid_loss_per_partition=loss_per_partition,
@@ -399,7 +386,7 @@ def order_y_wkey_list(y, results_list, key):
     assert len(idx) == len(y)
     return y[idx], pred_prob[idx]
 
-def load_dataset(dataset, model, key, is_aol=False, is_synth=False):
+def load_dataset(dataset, model, key, perfect_oracle=False, is_aol=False, is_synth=False):
 
     if is_synth:
         N = 200000
@@ -434,18 +421,17 @@ def load_dataset(dataset, model, key, is_aol=False, is_synth=False):
     logger.info('Done loading model (took %.1f sec)' % (time.time() - start_t))
     spinner.stop()
 
-    sort = np.argsort(oracle_scores)[::-1]
-    oracle_scores_sorted = oracle_scores[sort]
-    data_sorted = data[sort]
-
     logger.info("///////////////////////////////////////////////////////////")
     logger.info("Dataset propertiess")
-    logger.info("Size:        " + str(len(data_sorted)))
-    logger.info("Data:        " + str(data_sorted))
-    logger.info("Predictions: " + str(oracle_scores_sorted))
+    logger.info("Size:        " + str(len(data)))
+    logger.info("Data:        " + str(data))
+    logger.info("Predictions: " + str(oracle_scores))
     logger.info("///////////////////////////////////////////////////////////")
 
-    return data_sorted, oracle_scores_sorted
+    if perfect_oracle:
+        oracle_scores = data / np.sum(data) # perfect predictions 
+
+    return data, oracle_scores
 
 
 if __name__ == '__main__':
@@ -480,6 +466,7 @@ if __name__ == '__main__':
             args.test_dataset, 
             args.model, 
             'valid_output',
+            args.run_perfect_oracle_version,
             args.aol_data,
             args.synth_data)
         
@@ -501,6 +488,7 @@ if __name__ == '__main__':
             args.valid_dataset, 
             args.model, 
             'test_output',
+            args.run_perfect_oracle_version,
             args.aol_data,
             args.synth_data)
 

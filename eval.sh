@@ -11,6 +11,7 @@ python3 experiments.py \
    --save_folder experiments \
    --save_file ip_optimal_params \
    --n_workers 100 \
+   --run_perfect_oracle_version \
 
 # CUTOFF find optimal parameters for regular learned experiment with cutoff strategy
 python3 experiments.py \
@@ -21,6 +22,7 @@ python3 experiments.py \
    --save_file ip_optimal_params_with_cutoff \
    --n_workers 100 \
    --run_cutoff_version \
+   --run_perfect_oracle_version \
 
 
 # # run experiment over the test dataset with optimal params 
@@ -31,6 +33,7 @@ python3 experiments.py \
    --save_folder experiments \
    --save_file ip_learned_sketch_experiment_results \
    --n_workers 100 \
+   --run_perfect_oracle_version \
 
 
 # # CUTOFF run experiment over the test dataset with optimal params 
@@ -42,6 +45,7 @@ python3 experiments.py \
    --save_file ip_learned_sketch_with_cutoff_experiment_results \
    --n_workers 100 \
    --run_cutoff_version \
+   --run_perfect_oracle_version \
 
 
 # === AOL ===
@@ -53,6 +57,7 @@ python3 experiments.py \
    --save_file aol_optimal_params \
    --save_folder experiments \
    --n_workers 100 \
+   --run_perfect_oracle_version \
 
 # CUTOFF find optimal parameters for regular learned experiment with cutoff strategy
 python3 experiments.py \
@@ -64,6 +69,7 @@ python3 experiments.py \
    --save_file aol_optimal_params_with_cutoff \
    --n_workers 100 \
    --run_cutoff_version \
+   --run_perfect_oracle_version \
 
 
 python3 experiments.py \
@@ -74,6 +80,7 @@ python3 experiments.py \
    --save_folder experiments \
    --save_file aol_learned_sketch_experiment_results \
    --n_workers 100 \
+   --run_perfect_oracle_version \
 
 
 # CUTOFF run experiment over the test dataset with optimal params 
@@ -86,6 +93,7 @@ python3 experiments.py \
    --save_file aol_learned_sketch_with_cutoff_experiment_results \
    --n_workers 100 \
    --run_cutoff_version \
+   --run_perfect_oracle_version \
 
 
 
