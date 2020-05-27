@@ -299,7 +299,7 @@ def experiment_comapre_loss_with_cutoff(
     # save all results to the folder
     #################################################################
     np.savez(os.path.join(save_folder, save_file),
-        true_values=true_values,
+        true_values=valid_data,
         valid_cutoff_count_sketch_predictions=valid_cutoff_count_sketch_predictions,
         valid_cutoff_algo_predictions=valid_cutoff_algo_predictions,
         loss_per_partition=loss_per_partition,
@@ -329,7 +329,7 @@ def experiment_comapre_loss_no_cutoff(
 
     with get_context("spawn").Pool() as pool:
         results = pool.starmap(
-            run_learned_count_sketch, zip(repeat(valid_data), repeat(valid_oracle_predictions), 
+            run_learned_count_sketch, zip(repeat(valid_data), repeat(valid_oracle_scores), 
             best_space_cs, best_space_cmin, best_partitions, repeat(False)))
         pool.close()
         pool.join()
