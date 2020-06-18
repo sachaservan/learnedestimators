@@ -5,7 +5,8 @@ import argparse
 import random
 import datetime
 import numpy as np
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
 
 from utils.utils import get_stat, git_log, AverageMeter, keep_latest_files, get_data, get_data_list
 from utils.nn_utils import fc_layers, write_summary
