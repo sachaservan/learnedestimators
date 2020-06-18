@@ -1,4 +1,6 @@
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior()
+tf.disable_eager_execution()
 
 
 def fc_layers(input, hidden_len, hidden_keeps, name='fc_layers', activation='LeakyReLU', summary_layers=[0, 4, 9], seed=None):
