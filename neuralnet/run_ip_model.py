@@ -8,6 +8,11 @@ import numpy as np
 import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 
+# workaround for allow_pickel=False problem 
+np_load_old = np.load
+np.load = lambda *a,**k: np_load_old(*a, allow_pickle=True, **k)
+
+
 from utils.utils import get_stat, git_log, AverageMeter, keep_latest_files, get_data, get_data_list
 from utils.nn_utils import fc_layers, write_summary
 
@@ -59,7 +64,7 @@ def construct_graph(args):
         output, weights, bias = fc_layers(output, hidden_len, keep_probs, name='fc_encoder', activation=args.activation, summary_layers=[])
 
         output = tf.squeeze(output)
-        loss = tf.losses.mean_squared_error(labels=labels[:data_len], predictions=output[:data_len])
+        loss = tf.losses.absolute_difference(labels=labels[:data_len], predictions=output[:data_len], weights=labels[:data_len]) # computes the weighted loss
 
         optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
         update_op = optimizer.minimize(loss)
