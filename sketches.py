@@ -43,7 +43,6 @@ def count_sketch(y, n_buckets, n_hash):
         y_signs_all[i] = y_signs
 
     for i in range(len(y)):
-        item_est[i] = np.abs(np.median(
-            [y_signs_all[k, i] * counts_all[k, y_buckets_all[k, i]] for k in range(n_hash)]))
+        item_est[i] = np.median([y_signs_all[k, i] * counts_all[k, y_buckets_all[k, i]] for k in range(n_hash)])
     
     return item_est
