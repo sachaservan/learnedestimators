@@ -30,7 +30,7 @@ python3 run_ip_model.py \
            ../data/equinix-chicago.dirA.20160121-130800.ports.npy \
    --test  ../data/equinix-chicago.dirA.20160121-130900.ports.npy \
    --save exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_ep180 --rnn_hiddens 64 --port_hiddens 16 8 --hiddens 32 32 --batch_size 512 --n_epoch 200 --lr 0.0001 --regress_min 65 \
-   --resume predictions/exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512/exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_20200621-153848_ep180.69 --start_epoch 181 --eval_n 10
+   --resume model/exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_20200621-153848_ep180.69 --start_epoch 181 --eval_n 10
 
 # inference
 
