@@ -184,6 +184,7 @@ def run_training(model, train_x, train_y, valid_x, valid_y, test_x, test_y, args
         print(res)
         fp.write(res+'\n')
 
+        time.sleep(20) # sleep for 20 seconds to let the GPU cool off
 
 if __name__ == '__main__':
     argparser = argparse.ArgumentParser(sys.argv[0])
