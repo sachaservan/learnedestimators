@@ -139,7 +139,7 @@ def get_data_str_with_ports_list(data_list):
         x, y = get_data_str_with_ports(dpath)
         data_x += x
         data_y = np.concatenate((data_y, y))
-    return data_x, data_y
+    return np.array(data_x), data_y
 
 def get_data_list_args(data_list, feat_idx, args):
     return get_data_list(data_list, feat_idx, args.n_examples, args.bin_feat, args.hh_thr, args.port_hiddens)
