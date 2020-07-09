@@ -3,14 +3,22 @@
 """
 Constants.py
 """
-# SPACE_FRAC_TO_TEST = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95]
-# NUM_PARTITIONS_TO_TEST = [10, 20, 30, 40, 50, 60, 80, 100]
-# CUTOFF_FRAC_TO_TEST = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]
-SPACE_FRAC_TO_TEST = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7] # space fraction allocated to count-sketch
-NUM_PARTITIONS_TO_TEST = [2, 5, 10, 20, 30, 40, 50, 60, 100]
-CUTOFF_FRAC_TO_TEST = SPACE_FRAC_TO_TEST # same deal 
 
-COUNT_SKETCH_OPTIMAL_N_HASH = 5
+ALGO_TYPE_PARTITION = "LEARNED_PARITION_ALGO"
+ALGO_TYPE_STD_THRESHOLD = "LEARNED_STD_THRESHOLD_ALGO"
+
+# TODO: find a better name for this one 
+ALGO_TYPE_LOWFQ_PREDICTION = "LEARNED_LOWFQ_PREDICTION_ALGO"
+
+NUM_PARTITIONS_TO_TEST = [1, 3, 5, 10] # number of partitions for the learned partition algorithm variant
+STD_FACTORS_TO_TEST = [0.5, 1, 2, 3] # standard deviation factor for accepting oracle vs. CS pred in threshold variant 
+CUTOFF_FRAC_TO_TEST = [0.05, 0.1, 0.2, 0.3, 0.4, 0.5]
+SKETCH_FRAC_TO_TEST = [0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+
+MODEL_SIZE_AOL = 0.0152 # amortized model size 
+MODEL_SIZE_IP =  0.0031
+
+COUNT_SKETCH_OPTIMAL_N_HASH = 3
 COUNT_MIN_OPTIMAL_N_HASH = 2
 N_REGISTERS_FOR_HLL = 64
 N_BYTES_FOR_SECOND_MOMENT_ESTIMATION = 4 
