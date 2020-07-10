@@ -9,6 +9,8 @@ ALGO_TYPE_STD_THRESHOLD = "LEARNED_STD_THRESHOLD_ALGO"
 
 # TODO: find a better name for this one 
 ALGO_TYPE_LOWFQ_PREDICTION = "LEARNED_LOWFQ_PREDICTION_ALGO"
+ALGO_TYPE_CUTOFF_AND_MEDIAN = "LEARNED_CUTOFF_AND_MEDIAN"
+
 
 NUM_PARTITIONS_TO_TEST = [1, 3, 5, 10] # number of partitions for the learned partition algorithm variant
 STD_FACTORS_TO_TEST = [0.5, 1, 2, 3] # standard deviation factor for accepting oracle vs. CS pred in threshold variant 

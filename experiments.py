@@ -114,6 +114,24 @@ def run_learned_low_frequency_prediction_count_sketch(y, y_scores, space, cutoff
     
     return all_estimates
 
+# 1) store cutoff_threshold items in a table and report their *exact* counts
+# 2) store all items beyond the threshold in a count sketch 
+# 3) report count sketch count if it's outside the std_factor of the standard deviation 
+#    from the normalized predicted score for the item 
+def run_learned_cutoff_and_median(y, y_scores, space): 
+
+    cutoff_threshold = int(space / 2.0)
+   
+    y_cutoff = y[cutoff_threshold:] # all items that have a predicted score > cutoff_thresh
+    y_scores_cutoff = y_scores[cutoff_threshold:] # all items that have a predicted score > cutoff_thresh
+   
+    table_estimates = np.array(y[:cutoff_threshold]) # store exact counts for all 
+    median_estiamtes = np.ones(len(y_cutoff)) * np.median(y_cutoff)
+
+    # prepend the table estimates to the count sketch estimates 
+    all_estimates = table_estimates.tolist() + median_estiamtes.tolist()
+    return all_estimates
+
 
 def experiment_comapre_loss(
     algo_type,
@@ -146,6 +164,7 @@ def experiment_comapre_loss(
                 best_cutoff_thresholds_algo))
             pool.close()
             pool.join()
+
     elif algo_type == ALGO_TYPE_STD_THRESHOLD: 
         # learned algorithm with cutoff 
         with get_context("spawn").Pool() as pool:
@@ -171,6 +190,20 @@ def experiment_comapre_loss(
                 best_sketch_threshold_algo))
             pool.close()
             pool.join()
+
+    # special case; doesn't require loading optimal parameters
+    # just run and exit 
+    elif algo_type == ALGO_TYPE_CUTOFF_AND_MEDIAN:
+          # learned algorithm with cutoff 
+        with get_context("spawn").Pool() as pool:
+            algo_predictions = pool.starmap(
+                run_learned_cutoff_and_median, 
+                zip(repeat(data), 
+                repeat(oracle_scores), 
+                space_allocations))
+            pool.close()
+            pool.join()
+            
 
     # vanilla sketch + cutoff 
     n_hashes = np.zeros(len(space_allocations), dtype=int)
@@ -552,7 +585,8 @@ if __name__ == '__main__':
 
     assert (args.learned_algo_type == ALGO_TYPE_PARTITION \
         or args.learned_algo_type == ALGO_TYPE_STD_THRESHOLD \
-        or args.learned_algo_type == ALGO_TYPE_LOWFQ_PREDICTION)
+        or args.learned_algo_type == ALGO_TYPE_LOWFQ_PREDICTION \
+        or args.learned_algo_type == ALGO_TYPE_CUTOFF_AND_MEDIAN)
 
     # set the random seed for numpy values
     np.random.seed(args.seed)
@@ -606,6 +640,10 @@ if __name__ == '__main__':
                 args.n_workers, 
                 args.save_folder, 
                 args.save_file + '_learned')
+        elif args.learned_algo_type == ALGO_TYPE_CUTOFF_AND_MEDIAN:
+            print("This variant of the algorithm does not require validation data")
+            exit(0)
+
 
 
         if args.run_cutoff_count_sketch:
@@ -617,6 +655,7 @@ if __name__ == '__main__':
                 args.n_workers, 
                 args.save_folder,  
                 args.save_file + '_count_sketch')
+
 
 
     elif args.test_dataset is not None:
@@ -633,6 +672,7 @@ if __name__ == '__main__':
             args.aol_data,
             args.synth_data)
         spinner.stop()
+
 
         # TODO: figure out whether we need to load multiple param files
         best_cutoff_thresh_count_sketch = []
@@ -658,6 +698,9 @@ if __name__ == '__main__':
             best_std_factors_algo = np.array(data['best_std_factors_for_space'])
         elif args.learned_algo_type == ALGO_TYPE_LOWFQ_PREDICTION:
             best_sketch_threshold_algo = np.array(data['best_sketch_thresh_for_space'])
+      
+        # elif args.learned_algo_type == ALGO_TYPE_CUTOFF_AND_MEDIAN:
+        # no parameters to load for this algorithm 
 
         # load the best cutoff threshold for the algorithm (present in all optimal param files)
         best_cutoff_thresh_algo = np.array(data['best_cutoff_thresh_for_space'])
