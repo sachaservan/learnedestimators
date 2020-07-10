@@ -39,7 +39,7 @@ python3 run_ip_model.py \
     --valid ../data/equinix-chicago.dirA.20160121-130700.ports.npy \
     --test  ../data/equinix-chicago.dirA.20160121-130900.ports.npy \
     --save pred_weighted --rnn_hiddens 64 --port_hiddens 16 8 --hiddens 32 32 --batch_size 512 --n_epoch 200 --lr 0.0001 --regress_min 65 \
-    --resume ../model/exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_20200621-153848_ep180.69 --evaluate
+    --resume model/exp20_ip_rnn_10min_r1-p2-h2_rmin65_ru64_bs512_20200621-153848_ep180.69 --evaluate
 
 
 # === Search Query ===
