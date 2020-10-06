@@ -65,7 +65,9 @@ def construct_graph(args):
         output, weights, bias = fc_layers(output, hidden_len, keep_probs, name='fc_encoder', activation=args.activation, summary_layers=[])
 
         output = tf.squeeze(output)
-        loss = tf.losses.absolute_difference(labels=labels[:data_len], predictions=output[:data_len], weights=labels[:data_len]) # computes the weighted loss
+      
+        loss_weight = 1.0 / np.array(labels[:data_len]) # computes the relative loss by dividing by the true frequency
+        loss = tf.losses.absolute_difference(labels=labels[:data_len], predictions=output[:data_len], weights=loss_weight)
 
         optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
         update_op = optimizer.minimize(loss)

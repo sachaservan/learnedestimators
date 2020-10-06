@@ -75,7 +75,9 @@ def construct_graph(args):
             output = tf.nn.relu(tf.squeeze(output))
         else:
             output = tf.squeeze(output)
-        loss = tf.losses.absolute_difference(labels=labels[:data_len], predictions=output[:data_len], weights=labels[:data_len]) # computes the weighted loss
+        
+        loss_weight = 1.0 / np.array(labels[:data_len]) # computes the relative loss by dividing by the true frequency
+        loss = tf.losses.absolute_difference(labels=labels[:data_len], predictions=output[:data_len], weights=loss_weight) 
 
         # log gradients
         if args.log_hist:
