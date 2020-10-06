@@ -66,9 +66,8 @@ def construct_graph(args):
 
         output = tf.squeeze(output)
       
-        # computes the relative loss by dividing by the true frequency
-        # normalize by the "true" frequency 
-        loss = tf.losses.mean_relative_error(labels=labels[:data_len], predictions=output[:data_len], normalizer=labels[:data_len])
+        loss_weight = tf.math.reciprocal(labels[:data_len]) # computes the relative loss by dividing by the true frequency
+        loss = tf.losses.absolute_difference(labels=labels[:data_len], predictions=output[:data_len], weights=loss_weight)
 
         optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
         update_op = optimizer.minimize(loss)
