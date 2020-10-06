@@ -76,8 +76,10 @@ def construct_graph(args):
         else:
             output = tf.squeeze(output)
         
-        loss_weight = 1.0 / np.array(labels[:data_len]) # computes the relative loss by dividing by the true frequency
-        loss = tf.losses.absolute_difference(labels=labels[:data_len], predictions=output[:data_len], weights=loss_weight) 
+        # computes the relative loss by dividing by the true frequency
+        # normalize by the "true" frequency 
+        loss = tf.losses.mean_relative_error(labels=labels[:data_len], predictions=output[:data_len], normalizer=labels[:data_len])
+
 
         # log gradients
         if args.log_hist:
