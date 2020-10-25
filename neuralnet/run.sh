@@ -68,7 +68,7 @@ python3 ./run_aol_model.py \
    --valid ../data/aol_0005_len60.npz \
    --test  ../data/aol_0006_len60.npz \
    --save exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra  --embed_size 64 --rnn_hidden 256 --hiddens 32 --batch_size 128 --n_epoch 500 --lr 0.0001 --word_max_len 60 --regress_actual --eval_n 10 \
-   --resume model/exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra_20201019-092449_ep140.699 --evaluate
+   --resume model/exp22_aol_5d_r1-h1_u256-32_eb64_bs128_ra_20201019-092449_ep140.69 --evaluate
 
 # inference 
 tday=06
