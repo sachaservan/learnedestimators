@@ -48,24 +48,9 @@ def count_sketch(y, n_buckets, n_hash):
     return item_est
 
 
-def median_sketch(y, n_buckets, n_hash):
-    ''' 
-    regular count sketch algorithm 
-    '''
-    item_est = np.zeros(len(y))
-    counts_all = np.zeros((n_hash, n_buckets))
-   
-    y_buckets_all = np.zeros((n_hash, len(y)), dtype=int)
-    y_signs_all = np.zeros((n_hash, len(y)), dtype=int)
-    
-    for i in range(n_hash):
-        counts, y_buckets, y_signs = random_hash_with_sign(y, n_buckets)
-        counts_all[i] = counts
-        y_buckets_all[i] = y_buckets
-        y_signs_all[i] = y_signs
+def median_sketch(items, space):
 
-    for i in range(len(y)):
-        item_est[i] = np.median([y_signs_all[k, i] * counts_all[k, y_buckets_all[k, i]] for k in range(n_hash)])
-
+    counts, item_buckets = random_hash(items, space)
+    median = np.median(counts)
     
-    return np.median(item_est)
+    return median

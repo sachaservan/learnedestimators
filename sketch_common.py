@@ -10,7 +10,7 @@ def log(x, b):
     '''
     convinience function for computing log in arbitrary base b
     '''
-    return  math.log(x) / math.log(b)
+    return  math.log2(x) / math.log2(b)
 
 def random_hash(y, n_buckets):
     '''
@@ -47,14 +47,78 @@ def second_moment_estimate(y):
     return est / iters
 
 
-def compute_sum_estimate(values, eps, n_reg=16):
+def estimate_median(values, num_samples=10):
+    space_usage = 0
+    unique = []
+    for i in range(num_samples):
+        u, space = get_unique_element(values)
+        space_usage += space
+        if u != -1:
+            unique.append(u)
+        
+    return np.median(unique), space_usage
+        
+
+def get_unique_element(values):
+
+    lv = math.ceil(math.log2(len(values)))
+    counters = np.zeros(lv) # unique element counters 
+    numvalues = np.zeros(lv) # hack: keep track of exact collision count then run HLL to estimate 
+    
+    space_usage = lv * 2 # 16 bits = 2 bytes needed per HLL counter 
+    space_usage += 16 # 128 bits = 16 bytes needed for global HLL 
+    space_usage += lv # needed for unique element counters 
+   
+    probs = np.zeros(lv)
+    for j in range(lv):
+        probs[j] = 2**j
+    
+    for v in values:
+        for j in range(lv):
+            rand = random.randint(0, probs[j]) # sample 0 with probability 2^-j
+            if rand == 0:
+                counters[j] += v
+                numvalues[j] += 1 # keep track of how many items hit 
+    
+    de = hyperloglogsimulate(len(values), 128) # estimate for total number of distinct elements 
+    #for j in range(lv):
+        # undo the hack above by estimating the number of distinct elements rather
+        # than keeping track of them 
+        # if numvalues[j] != 0:
+        #     numvalues[j] = math.ceil(hyperloglogsimulate(int(numvalues[j]), 2)) - 1
+
+    unique = -1
+    j = math.ceil(math.log2(de))
+    j = min(j, lv-1)
+    if numvalues[j] == 1:
+        unique = counters[j]
+    
+    return unique, space_usage
+
+def space_needed_for_distinct_element_sum_estiamte(values, eps, n_reg=16):
+    
+    min_value = abs(np.min(values)) + 1 # avoid issues with taking negative log 
+    logbase = 1 + eps
+    exp = np.array([int(round(log(x + min_value, logbase))) for x in values]) # compute rounding of log(x) with base logbase
+  
+    # total space in bytes: number of "groupings" times the
+    # number of regiseters in HLL (assume 1 byte per register)
+    u = len(np.unique(exp))
+    space = u * n_reg  # space in bytes
+
+    return space
+
+def compute_distinct_element_sum_estimate(values, eps, n_reg=16):
     ''' 
     computes a sum of values in a stream; without double counting 
     error is bounded by by eps if n_reg is chosen accordingly 
     '''
+    
+    min_value = abs(np.min(values)) + 1 # avoid issues with taking negative log 
+
     estimated_sum = 0
     logbase = 1 + eps
-    exp = np.array([int(round(log(x, logbase))) for x in values]) # compute rounding of log(x) with base logbase
+    exp = np.array([int(round(log(x+min_value, logbase))) for x in values]) # compute rounding of log(x) with base logbase
     exp.sort() # sort the array lowest to highest 
 
     i = 0
@@ -70,8 +134,8 @@ def compute_sum_estimate(values, eps, n_reg=16):
         i = k
 
 
-    # total space in bytes: number of "groupings" times the n
-    # umber of regiseters in HLL (assume 1 byte per register)
+    # total space in bytes: number of "groupings" times the
+    # number of regiseters in HLL (assume 1 byte per register)
     u = len(np.unique(exp))
     space = u * n_reg  # space in bytes
 
@@ -83,9 +147,9 @@ def hyperloglogsimulate(n, m):
     byte registers. see https://en.wikipedia.org/wiki/HyperLogLog
     '''
 
-    assert math.log(m, 2).is_integer() # m must be a power of two
+    assert math.log2(m).is_integer() # m must be a power of two
 
-    lm = int(math.log(m, 2))
+    lm = int(math.log2(m))
 
     assert lm < 64 # the "hash" assumes 128 bits of which the first lm are used
 
@@ -128,14 +192,23 @@ def hyperloglogsimulate(n, m):
 
     E = a * (m**2) / z 
 
+
+    # see http://algo.inria.fr/flajolet/Publications/FlFuGaMe07.pdf 
+    # for range correction (p. 140)
+
+    # small range correction 
     if E <= (5/2) * m: 
         v = 0
         for i in range(m):
             if registers[i] == 0:
                 v += 1
         if v != 0:
-            E = m * math.log(m/v, 2) # small range correction 
+            E = m * math.log2(m/v) 
 
-        # TODO: implement large range correction 
+    # no intermediate range correction (just E)
+
+    # large range correction 
+    if E > 2**32 / 30:
+        E = -2**32 * math.log2(1-E/2**32)
 
     return E 
